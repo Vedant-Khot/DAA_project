@@ -1,0 +1,21 @@
+# 1. Ignore Build Folders
+build/
+out/
+bin/
+cmake-build-debug/
+
+# 2. Ignore Executables & Object Files
+*.exe
+*.dll
+*.o
+*.obj
+*.lib
+*.a
+
+# 3. Ignore IDE Settings (User specific)
+.vscode/
+.idea/
+*.user
+
+# 4. Ignore Dependency Folders (if any)
+_deps/
