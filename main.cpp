@@ -36,7 +36,7 @@ int main()
         std::string name = req_body["username"];
         int age = req_body["age"];
 
-        json response_data;
+        json response_data; // json object for response
         response_data["status"] = "success";
         response_data["message"] = "User " + name + " created!";
         response_data["id"] = 101; 
