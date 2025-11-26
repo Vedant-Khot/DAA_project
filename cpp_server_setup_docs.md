@@ -1,15 +1,4 @@
-Here is a professional **`README.md`** file that you can copy and paste into your project.
 
-This document is written specifically for your teammates. It explains exactly how to set up the environment from scratch, avoiding the errors you just faced.
-
----
-
-### 📝 Instructions
-1.  Create a file named **`README.md`** in your project folder.
-2.  Paste the text below into it.
-3.  Push it to GitHub.
-
----
 
 # 🚀 C++ Backend API - Setup Guide
 
