@@ -17,7 +17,7 @@ json parth(const string& source, const string& destination) {
 int main()
 {
     crow::SimpleApp app;
-
+    // mysql connector
     // ==========================================
     // ROUTE 1: GET /health
     // Check if server is alive
