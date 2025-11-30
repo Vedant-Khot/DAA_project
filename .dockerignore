@@ -1,8 +1,0 @@
-build/
-.git/
-.gitignore
-README.md
-*.md
-.vscode/
-.idea/
-CMakeCache.txt
