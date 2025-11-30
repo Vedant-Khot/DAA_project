@@ -19,3 +19,7 @@ cmake-build-debug/
 
 # 4. Ignore Dependency Folders (if any)
 _deps/
+
+# 5. Docker files
+.dockerignore
+Dockerfile
