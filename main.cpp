@@ -35,8 +35,9 @@ int main() {
     // ==========================================
     CROW_ROUTE(app, "/<path>")
     .methods(crow::HTTPMethod::OPTIONS)
-    ([](const crow::request& req){
-        return crow::response(200);
+    ([](const crow::request& req, crow::response& res){
+        res.code = 200;
+        res.end();
     });
 
     // ==========================================
