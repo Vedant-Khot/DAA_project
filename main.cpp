@@ -37,6 +37,26 @@ int main() {
     // ==========================================
 
     // ==========================================
+    // ROOT ENDPOINT
+    // ==========================================
+    CROW_ROUTE(app, "/")
+    ([](){
+        json response = {
+            {"status", "ok"},
+            {"message", "Flight Booking API Server"},
+            {"version", "1.0.0"},
+            {"endpoints", {
+                {"GET /api/airports", "Get all airports"},
+                {"GET /api/flights", "Get flights (limit: 10 by default)"},
+                {"GET /api/search?from=X&to=Y", "Search flights"},
+                {"GET /api/search_date?date=YYYY-MM-DD", "Search flights by date"},
+                {"/health", "Health check endpoint"}
+            }}
+        };
+        return crow::response(response.dump());
+    });
+
+    // ==========================================
     // HEALTH CHECK ENDPOINT
     // ==========================================
     CROW_ROUTE(app, "/health")
