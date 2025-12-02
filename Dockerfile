@@ -14,6 +14,8 @@ WORKDIR /build
 # Copy source code
 COPY CMakeLists.txt .
 COPY main.cpp .
+COPY jsondb.h .
+COPY jsondb.cpp .
 
 # Build the application
 RUN cmake -B build -G "Unix Makefiles" \
@@ -32,6 +34,9 @@ WORKDIR /app
 
 # Copy compiled binary from builder
 COPY --from=builder /build/build/server_app /app/server_app
+
+# Copy database file if it exists (optional, will be created on first run)
+RUN if [ -f flight_database.json ]; then cp flight_database.json /app/; else echo "Database will be created on first run"; fi
 
 # Expose the port
 EXPOSE 18080

@@ -1,0 +1,12 @@
+build/
+.git/
+.gitignore
+README.md
+*.md
+.vscode/
+.idea/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+backend/
+frontend/
