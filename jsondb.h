@@ -5,6 +5,7 @@
 #include <mutex>
 #include <vector>
 #include <nlohmann/json.hpp>
+#include "Models.h"
 
 using json = nlohmann::json;
 
@@ -14,25 +15,25 @@ private:
     json data;
     std::mutex db_mutex;
 
-    void seed_data();
-    void save();
+    void seed_data(); // Generates the 50 airports & 250 flights
+    void save();      // Writes to disk
 
 public:
     JsonDB(const std::string& fname);
 
-    // --- PUBLIC APIs --- //
+    // --- READ APIs ---
     json get_all_airports();
     json get_flights_limited(int limit);
     json search_flights(const std::string& src, const std::string& dst);
     json search_flights_by_date(const std::string& date);
 
-    // --- ADMIN APIs (Airports) --- //
-    bool add_airport(const json& airport_data);
+    // --- ADMIN APIs (Airports) ---
+    bool add_airport(const Airport& airport);
     bool delete_airport(const std::string& code);
     bool update_airport(const std::string& code, const json& new_data);
 
-    // --- ADMIN APIs (Flights) --- //
-    bool add_flight(const json& flight_data);
+    // --- ADMIN APIs (Flights) ---
+    bool add_flight(const Flight& flight);
     bool delete_flight(const std::string& id);
     bool update_flight(const std::string& id, const json& new_data);
 };
