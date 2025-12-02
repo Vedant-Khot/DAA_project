@@ -57,7 +57,7 @@ FetchContent_MakeAvailable(json)
 # ==========================================
 # 5. BUILD THE APP
 # ==========================================
-add_executable(server_app main.cpp)
+add_executable(server_app main.cpp jsondb.cpp)
 
 # Link everything together
 if(WIN32)
