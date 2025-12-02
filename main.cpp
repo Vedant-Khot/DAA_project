@@ -1,45 +1,23 @@
 #include "crow.h"
 #include <nlohmann/json.hpp>
-#include <iostream>
-#include <fstream>  // Required for file handling
-#include <mutex>    // Required for thread safety
-#include <vector>
+#include <bits/stdc++.h>
 
+using namespace std;
 using json = nlohmann::json;
 
-// ==========================================
-// CONFIGURATION
-// ==========================================
-const std::string DB_FILE = "database.json";
-std::mutex db_mutex; // Prevents crashing if two users post at the same time
-
-// ==========================================
-// HELPER FUNCTIONS (The "Database" Logic)
-// ==========================================
-
-// Load data from disk
-json load_db() {
-    std::ifstream file(DB_FILE);
-    if (!file.is_open() || file.peek() == std::ifstream::traits_type::eof()) {
-        return json::array(); // Return empty list if file doesn't exist
-    }
-    try {
-        return json::parse(file);
-    } catch (...) {
-        return json::array(); // Return empty list if file is corrupted
-    }
-}
-
-// Save data to disk
-void save_db(const json& data) {
-    std::ofstream file(DB_FILE);
-    file << data.dump(4); // 4 = Indent with 4 spaces (pretty print)
+json parth(const string& source, const string& destination) {
+    // Dummy implementation for demonstration
+    json paths = json::array();
+    paths.push_back({{"path_id", 1}, {"nodes", {"Hrishi", "Clite", "Gym"}}});
+    paths.push_back({{"path_id", 2}, {"nodes", {"Hrishi", "Main building", "Gym"}}});
+    paths.push_back({{"path_id", 3}, {"nodes", {"Hrishi", "Road", "GYm"}}});
+    return paths;
 }
 
 int main()
 {
     crow::SimpleApp app;
-
+    // mysql connector
     // ==========================================
     // ROUTE 1: GET /health
     // Check if server is alive
@@ -49,8 +27,9 @@ int main()
         json response;
         response["status"] = "running";
         response["port"] = 18080;
-        response["database_type"] = "json_file";
-        return crow::response(response.dump());
+        auto res = crow::response(response.dump());
+        res.set_header("Content-Type", "application/json");
+        return res;
     });
 
     // ==========================================
@@ -60,39 +39,57 @@ int main()
     CROW_ROUTE(app, "/api/user").methods(crow::HTTPMethod::POST)
     ([](const crow::request& req){
         
-        auto req_body = json::parse(req.body, nullptr, false);
+        auto req_body = json::parse(req.body, nullptr, false); // parse JSON body
 
+        // Validate JSON
         if (req_body.is_discarded()) {
             return crow::response(400, "Invalid JSON");
         }
 
-        std::string name = req_body["username"];
+        // Extract data from JSON
+        string name = req_body["username"];
         int age = req_body["age"];
 
-        // LOCK THE DB (Thread Safety)
-        std::lock_guard<std::mutex> lock(db_mutex);
-
-        // 1. Load existing
-        json db = load_db();
-
-        // 2. Add new user
-        json new_user;
-        new_user["id"] = db.size() + 1; // Simple Auto-Increment ID
-        new_user["username"] = name;
-        new_user["age"] = age;
-        
-        db.push_back(new_user);
-
-        // 3. Save back to file
-        save_db(db);
-
-        // Response
-        json response_data;
+        // json object for response
+        json response_data; 
         response_data["status"] = "success";
         response_data["message"] = "User " + name + " saved to file!";
         response_data["user"] = new_user;
 
-        return crow::response(201, response_data.dump());
+        auto res = crow::response(201, response_data.dump());
+        res.set_header("Content-Type", "application/json");
+        return res;
+    });
+
+    // get method to search with two params source and destination 
+    CROW_ROUTE(app,"/api/search").methods(crow::HTTPMethod::GET)
+    ([](const crow::request& req){
+        string source = req.url_params.get("source");
+        string destination = req.url_params.get("destination");
+
+        if (source.empty() || destination.empty()) {
+            json error;
+            error["status"] = "error";
+            error["message"] = "Missing 'source' or 'destination' parameter";
+            auto res = crow::response(400, error.dump());
+            res.set_header("Content-Type", "application/json");
+            return res;
+        }
+
+        // Call parth function and get 3 paths
+        json result_paths = parth(source, destination);
+
+        // Prepare response
+        json response;
+        response["status"] = "success";
+        response["source"] = source;
+        response["destination"] = destination;
+        response["paths_found"] = result_paths.size();
+        response["paths"] = result_paths;
+
+        auto res = crow::response(200, response.dump());
+        res.set_header("Content-Type", "application/json");
+        return res;
     });
 
     // ==========================================
@@ -111,3 +108,4 @@ int main()
     // ==========================================
     app.port(18080).multithreaded().run();
 }
+
