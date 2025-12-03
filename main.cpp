@@ -38,6 +38,35 @@ int main() {
     });
 
     // ==========================================
+    // ROOT ENDPOINT
+    // ==========================================
+    CROW_ROUTE(app, "/")
+    ([](){
+        json response = {
+            {"status", "ok"},
+            {"message", "Flight Booking API Server"},
+            {"version", "1.0.0"},
+            {"endpoints", {
+                {"/health", "Health check endpoint"},
+                {"GET /api/airports", "Get all airports"},
+                {"GET /api/flights", "Get flights (limit: 10 by default)"},
+                {"GET /api/search?from=X&to=Y", "Search flights by route"},
+                {"GET /api/search_date?date=YYYY-MM-DD", "Search flights by date"},
+                {"GET /api/search_smart?from=X&to=Y&date=YYYY-MM-DD", "Smart route search (K-shortest paths)"}
+            }}
+        };
+        return crow::response(response.dump());
+    });
+
+    // ==========================================
+    // HEALTH CHECK ENDPOINT
+    // ==========================================
+    CROW_ROUTE(app, "/health")
+    ([](){
+        return crow::response(200, "OK");
+    });
+
+    // ==========================================
     // PUBLIC ROUTES
     // ==========================================
     
