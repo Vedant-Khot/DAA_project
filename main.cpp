@@ -4,70 +4,30 @@
 #include <string>
 
 // ==========================================
-// 1. DEFINE CORS MIDDLEWARE
+// CORS MIDDLEWARE
 // ==========================================
 struct CORSHandler {
     struct context {};
 
     void before_handle(crow::request& req, crow::response& res, context& ctx) {
-        // No action needed before handling request
+        // No action needed
     }
 
     void after_handle(crow::request& req, crow::response& res, context& ctx) {
+        // Always add these headers to every response
         res.add_header("Access-Control-Allow-Origin", "*");
         res.add_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-        res.add_header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+        res.add_header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
     }
 };
 
-// Initialize Database
 JsonDB db("flight_database.json");
 
 int main() {
     crow::App<CORSHandler> app;
 
     // ==========================================
-    // GLOBAL OPTIONS ROUTE (The Fix is Here)
-    // ==========================================
-    // Because we use "/<path>", Crow passes the path as a string argument.
-    // We added 'std::string' to the arguments list below.
-    CROW_ROUTE(app, "/<path>")
-    .methods(crow::HTTPMethod::OPTIONS)
-    ([](const crow::request& req, std::string path){ 
-        return crow::response(200);
-    });
-
-    // ==========================================
-    // ROOT ENDPOINT
-    // ==========================================
-    CROW_ROUTE(app, "/")
-    ([](){
-        json response = {
-            {"status", "ok"},
-            {"message", "Flight Booking API Server"},
-            {"version", "1.0.0"},
-            {"endpoints", {
-                {"/health", "Health check endpoint"},
-                {"GET /api/airports", "Get all airports"},
-                {"GET /api/flights", "Get flights (limit: 10 by default)"},
-                {"GET /api/search?from=X&to=Y", "Search flights by route"},
-                {"GET /api/search_date?date=YYYY-MM-DD", "Search flights by date"},
-                {"GET /api/search_smart?from=X&to=Y&date=YYYY-MM-DD", "Smart route search (K-shortest paths)"}
-            }}
-        };
-        return crow::response(response.dump());
-    });
-
-    // ==========================================
-    // HEALTH CHECK ENDPOINT
-    // ==========================================
-    CROW_ROUTE(app, "/health")
-    ([](){
-        return crow::response(200, "OK");
-    });
-
-    // ==========================================
-    // PUBLIC ROUTES
+    // 1. PUBLIC ROUTES
     // ==========================================
     
     CROW_ROUTE(app, "/api/airports")
@@ -82,47 +42,28 @@ int main() {
         return crow::response(db.get_flights_limited(limit).dump());
     });
 
-    // 1. Standard Direct Search (Legacy support)
     CROW_ROUTE(app, "/api/search")
     ([](const crow::request& req){
         const char* src = req.url_params.get("from");
         const char* dst = req.url_params.get("to");
-        
-        // Default date if missing
         std::string date = "2025-12-01";
         if (req.url_params.get("date")) date = req.url_params.get("date");
 
-        if (!src || !dst) return crow::response(400, "Missing 'from' or 'to'");
+        if (!src || !dst) return crow::response(400, "Missing parameters");
         
-        // Use the new smart function even for standard search
         return crow::response(db.find_smart_routes(src, dst, date, 5).dump());
     });
 
-    // 2. Smart Search (Explicit Endpoint)
-    // /api/search_smart?from=<src>&to=<dst>&date=<yyyy-mm-dd>
-    // sample call: /api/search_smart?from=JFK&to=LAX&date=2025-12-01
-    CROW_ROUTE(app, "/api/search_smart")
-    ([](const crow::request& req){
-        const char* src = req.url_params.get("from");
-        const char* dst = req.url_params.get("to");
-        const char* date = req.url_params.get("date"); 
-
-        if (!src || !dst || !date) {
-            return crow::response(400, "Missing 'from', 'to', or 'date' params");
-        }
-
-        // Call the algorithm inside JsonDB
-        json routes = db.find_smart_routes(src, dst, date, 5); 
-
-        return crow::response(routes.dump());
-    });
-
     // ==========================================
-    // ADMIN ROUTES
+    // 2. ADMIN ROUTES (Fixed for CORS)
+    // We add OPTIONS method to all of them
     // ==========================================
 
-    CROW_ROUTE(app, "/admin/airport/add").methods(crow::HTTPMethod::POST)
+    // ADD AIRPORT
+    CROW_ROUTE(app, "/admin/airport/add").methods(crow::HTTPMethod::POST, crow::HTTPMethod::OPTIONS)
     ([](const crow::request& req){
+        if (req.method == crow::HTTPMethod::OPTIONS) return crow::response(200); // Handle Preflight
+        
         auto body = json::parse(req.body, nullptr, false);
         if (body.is_discarded()) return crow::response(400);
         try {
@@ -131,8 +72,11 @@ int main() {
         } catch(...) { return crow::response(400); }
     });
 
-    CROW_ROUTE(app, "/admin/airport/delete").methods(crow::HTTPMethod::POST)
+    // DELETE AIRPORT
+    CROW_ROUTE(app, "/admin/airport/delete").methods(crow::HTTPMethod::POST, crow::HTTPMethod::OPTIONS)
     ([](const crow::request& req){
+        if (req.method == crow::HTTPMethod::OPTIONS) return crow::response(200);
+
         auto body = json::parse(req.body, nullptr, false);
         if (body.is_discarded()) return crow::response(400);
         std::string code = body.value("code", "");
@@ -140,28 +84,26 @@ int main() {
         return crow::response(404, "Not Found");
     });
 
-    CROW_ROUTE(app, "/admin/airport/update").methods(crow::HTTPMethod::POST)
+    // ADD FLIGHT
+    CROW_ROUTE(app, "/admin/flight/add").methods(crow::HTTPMethod::POST, crow::HTTPMethod::OPTIONS)
     ([](const crow::request& req){
-        const char* code = req.url_params.get("code");
-        if (!code) return crow::response(400, "Missing code");
-        auto body = json::parse(req.body, nullptr, false);
-        if (body.is_discarded()) return crow::response(400);
-        if (db.update_airport(code, body)) return crow::response(200, "Updated");
-        return crow::response(404, "Not Found");
-    });
+        if (req.method == crow::HTTPMethod::OPTIONS) return crow::response(200); // Handle Preflight
 
-    CROW_ROUTE(app, "/admin/flight/add").methods(crow::HTTPMethod::POST)
-    ([](const crow::request& req){
         auto body = json::parse(req.body, nullptr, false);
-        if (body.is_discarded()) return crow::response(400);
+        if (body.is_discarded()) return crow::response(400, "Invalid JSON");
+
         try {
-            if (db.add_flight(body.get<Flight>())) return crow::response(201, "Added");
+            Flight fl = body.get<Flight>();
+            if (db.add_flight(fl)) return crow::response(201, "Added");
             return crow::response(409, "Exists");
-        } catch(...) { return crow::response(400); }
+        } catch (...) { return crow::response(400, "Bad Request"); }
     });
 
-    CROW_ROUTE(app, "/admin/flight/delete").methods(crow::HTTPMethod::POST)
+    // DELETE FLIGHT
+    CROW_ROUTE(app, "/admin/flight/delete").methods(crow::HTTPMethod::POST, crow::HTTPMethod::OPTIONS)
     ([](const crow::request& req){
+        if (req.method == crow::HTTPMethod::OPTIONS) return crow::response(200);
+
         auto body = json::parse(req.body, nullptr, false);
         if (body.is_discarded()) return crow::response(400);
         std::string id = body.value("id", "");
@@ -169,8 +111,11 @@ int main() {
         return crow::response(404, "Not Found");
     });
 
-    CROW_ROUTE(app, "/admin/flight/update").methods(crow::HTTPMethod::POST)
+    // UPDATE FLIGHT
+    CROW_ROUTE(app, "/admin/flight/update").methods(crow::HTTPMethod::POST, crow::HTTPMethod::OPTIONS)
     ([](const crow::request& req){
+        if (req.method == crow::HTTPMethod::OPTIONS) return crow::response(200);
+
         const char* id = req.url_params.get("id");
         if (!id) return crow::response(400, "Missing id");
         auto body = json::parse(req.body, nullptr, false);
@@ -179,7 +124,7 @@ int main() {
         return crow::response(404, "Not Found");
     });
 
-    // 404 Handler
+    // CATCH-ALL (Backup for other OPTIONS requests)
     app.catchall_route()
     ([](const crow::request& req, crow::response& res) {
         if (req.method == crow::HTTPMethod::OPTIONS) {
@@ -192,7 +137,9 @@ int main() {
         }
     });
 
-    // Port Logic
+    // ==========================================
+    // START SERVER
+    // ==========================================
     int port = 18080;
     if (const char* env_p = std::getenv("PORT")) {
         port = std::stoi(env_p);
