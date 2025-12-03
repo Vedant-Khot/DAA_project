@@ -218,6 +218,24 @@ bool JsonDB::update_airport(const std::string& code, const json& new_data) {
     return false;
 }
 
+// --- STANDARD GETTERS ---
+json JsonDB::get_all_airports() {
+    std::lock_guard<std::mutex> lock(db_mutex);
+    return data.value("airports", json::array());
+}
+json JsonDB::get_flights_limited(int limit) {
+    std::lock_guard<std::mutex> lock(db_mutex);
+    // Simple implementation
+    json res = json::array();
+    if(data.contains("flights")) {
+        int c=0;
+        for(auto& f : data["flights"]) {
+            if(c++ >= limit) break;
+            res.push_back(f);
+        }
+    }
+    return res;
+}
 // --- ADMIN OPERATIONS (Flights) ---
 bool JsonDB::add_flight(const Flight& fl) {
     std::lock_guard<std::mutex> lock(db_mutex);

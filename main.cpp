@@ -2,10 +2,81 @@
 #include "jsondb.h"
 #include <iostream>
 
+
+// --- Struct for K-Shortest Path ---
+struct PathState {
+    int total_time;
+    string current_node;
+    vector<string> path_history;
+
+    // Min-heap comparator (Smallest time on top)
+    bool operator>(const PathState& other) const {
+        return total_time > other.total_time;
+    }
+};
+
+// --- K-Shortest Paths Algorithm ---
+vector<pair<int, vector<string>>> findKShortestPaths(const string& start, const string& end, int k = 5) {
+    vector<pair<int, vector<string>>> results;
+    
+    // Priority Queue stores: {Cost, CurrentNode, PathSoFar}
+    priority_queue<PathState, vector<PathState>, greater<PathState>> pq;
+    
+    // Count how many times we visited a node to prevent infinite cycles 
+    // and prune unnecessary long paths.
+    unordered_map<string, int> visit_counts;
+
+    // Initialize
+    pq.push({0, start, {start}});
+
+    while (!pq.empty() && results.size() < k) {
+        PathState top = pq.top();
+        pq.pop();
+
+        string u = top.current_node;
+        int cost = top.total_time;
+        vector<string> history = top.path_history;
+
+        // If we reached destination, add to results
+        if (u == end) {
+            results.push_back({cost, history});
+            continue; // Continue to find next best path
+        }
+
+        // Optimization: Don't process the same node more than K times
+        // This effectively finds the 1st shortest, 2nd shortest... Kth shortest way to 'u'
+        if (visit_counts[u] >= k) continue;
+        visit_counts[u]++;
+
+        // Explore Neighbors
+        if (adj_list.find(u) != adj_list.end()) {
+            for (const auto& edge : adj_list[u]) {
+                string v = edge.destination;
+                int new_cost = cost + edge.weight;
+
+                // Cycle Prevention: Don't go back to a node already in THIS specific path history
+                bool cycle = false;
+                for (const string& node : history) {
+                    if (node == v) { cycle = true; break; }
+                }
+                if (cycle) continue;
+
+                // Create new path history
+                vector<string> new_history = history;
+                new_history.push_back(v);
+
+                pq.push({new_cost, v, new_history});
+            }
+        }
+    }
+
+    return results;
+}
 // ==========================================
 // 1. DEFINE CORS MIDDLEWARE
 // This tells the browser: "It is okay to accept data from this server"
 // ==========================================
+
 struct CORSHandler {
     struct context {};
 
@@ -70,6 +141,25 @@ int main() {
         return crow::response(db.search_flights_by_date(date).dump());
     });
 
+    // 3. SMART ROUTING SEARCH (New!)
+    // URL: /api/search_smart?from=DEL&to=BLR&date=2025-12-01
+    CROW_ROUTE(app, "/api/search_smart")
+    ([](const crow::request& req){
+        const char* src = req.url_params.get("from");
+        const char* dst = req.url_params.get("to");
+        const char* date = req.url_params.get("date"); // e.g. "2025-12-01"
+
+        if (!src || !dst || !date) {
+            return crow::response(400, "Missing 'from', 'to', or 'date' params");
+        }
+
+        // Run the K-Shortest Path Algorithm
+        json routes = db.find_smart_routes(src, dst, date, 5); // Get top 5
+
+        return crow::response(routes.dump());
+    });
+
+    
     // ==========================================
     // ADMIN ROUTES
     // ==========================================

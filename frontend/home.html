@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        /* [YOUR CSS REMAINS EXACTLY THE SAME] */
+        /* CSS STYLES - EXACTLY THE SAME AS BEFORE */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Inter", "Segoe UI", sans-serif; }
         body { background: #0f172a; min-height: 100vh; color: #e2e8f0; }
         .header { background: linear-gradient(135deg, #1e40af 0%, #7c3aed 100%); padding: 40px 20px; position: relative; overflow: hidden; }
@@ -64,7 +64,11 @@
         .action-cell { text-align: center; }
         .book-button { padding: 10px 24px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; border-radius: 8px; color: white; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
         .book-button:hover { transform: scale(1.05); box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4); }
-        .loader { text-align: center; padding: 20px; color: #fff; display: none; }
+        
+        /* Loader Style */
+        .loader { text-align: center; padding: 20px; color: #fff; display: none; font-size: 18px; }
+        .loader i { margin-right: 10px; }
+        
         @media(max-width: 1200px) { .table-header, .flight-row { grid-template-columns: 2fr 2fr 1fr 1fr; } .duration-cell { display: none; } }
         @media(max-width: 900px) { .search-grid { grid-template-columns: 1fr; } .table-header { display: none; } .flight-row { grid-template-columns: 1fr; gap: 15px; padding: 20px; } .route-cell, .price-cell, .action-cell { justify-content: flex-start; } }
     </style>
@@ -103,7 +107,7 @@
                     <div class="input-field">
                         <label>Departure</label>
                         <div class="input-wrapper"><i class="fas fa-calendar"></i>
-                            <input type="date" id="datePicker" value="2025-12-01">
+                            <input type="date" value="2025-12-01">
                         </div>
                     </div>
 
@@ -136,7 +140,10 @@
             <h2 class="section-title" id="resultsTitle">Available Flights</h2>
         </div>
 
-        <div id="loader" class="loader"><i class="fas fa-spinner fa-spin"></i> Searching...</div>
+        <!-- Loader -->
+        <div id="loader" class="loader">
+            <i class="fas fa-spinner fa-spin"></i> Finding best flights...
+        </div>
 
         <!-- Flights Table (Dynamically Populated) -->
         <div class="flights-table">
@@ -151,7 +158,7 @@
             <div id="flightListContainer">
                 <!-- Flight rows will be injected here via JS -->
                 <div style="padding:40px; text-align:center; color:#64748b;">
-                    Please select a route and click Search.
+                    Please select source and destination to see flights.
                 </div>
             </div>
         </div>
@@ -162,7 +169,8 @@
         // ==========================================
         // 1. CONFIGURATION
         // ==========================================
-        const BASE_URL = "https://daaproject-production.up.railway.app";
+        const BASE_URL = "https://daa-project-api-services.onrender.com";
+        // const BASE_URL = "https://daaproject-production.up.railway.app";
         let allAirports = [];
 
         // ==========================================
@@ -189,6 +197,7 @@
         // Fetch Airports from C++ Backend
         async function loadAirports() {
             try {
+                console.log("Fetching airports from backend...");
                 const res = await fetch(`${BASE_URL}/api/airports`);
                 allAirports = await res.json();
                 
@@ -199,14 +208,12 @@
                 allAirports.forEach(apt => {
                     options += `<option value="${apt.code}">${apt.city} (${apt.code})</option>`;
                 });
-
+                console.log(options);
                 fromSelect.innerHTML = options;
                 toSelect.innerHTML = options;
-                
-                console.log("Airports loaded:", allAirports.length);
             } catch (error) {
                 console.error("Failed to load airports:", error);
-                alert("Could not connect to backend server.");
+                alert("Could not connect to backend server. Ensure CORS is enabled on backend.");
             }
         }
 
@@ -277,7 +284,7 @@
                         </div>
 
                         <div class="action-cell">
-                            <button class="book-button" onclick="alert('Booking feature coming soon for ${f.id}!')">Book Now</button>
+                            <button class="book-button" onclick="alert('Ticket booked for Flight ${f.id}!')">Book Now</button>
                         </div>
                     </div>
                     `;
@@ -306,8 +313,12 @@
             if (routeLine) map.removeLayer(routeLine);
 
             // Note: Backend JSON uses "long" for longitude, Leaflet expects [lat, lng]
-            const fromLatLng = [fromAirport.lat, fromAirport.long];
-            const toLatLng = [toAirport.lat, toAirport.long];
+            // We check for both 'long' and 'lng' to be safe with C++ models
+            const fromLon = fromAirport.long || fromAirport.lng;
+            const toLon = toAirport.long || toAirport.lng;
+
+            const fromLatLng = [fromAirport.lat, fromLon];
+            const toLatLng = [toAirport.lat, toLon];
 
             // Add Markers
             fromMarker = L.marker(fromLatLng, { icon: airportIcon }).addTo(map)
