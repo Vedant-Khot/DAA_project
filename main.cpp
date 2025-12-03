@@ -3,6 +3,10 @@
 #include <iostream>
 #include <bits/stdc++.h>
 
+using namespace std;
+using json = nlohmann::json;
+// ==========================================
+
 // --- Struct for K-Shortest Path ---
 struct PathState {
     int total_time;
@@ -16,7 +20,7 @@ struct PathState {
 };
 
 // --- K-Shortest Paths Algorithm ---
-vector<pair<int, vector<string>>> findKShortestPaths(const string& start, const string& end, int k = 5) {
+vector<pair<int, vector<string>>> findKShortestPaths(const string& start, const string& end, const unordered_map<string, vector<pair<string, int>>>& graph, int k = 5) {
     vector<pair<int, vector<string>>> results;
     
     // Priority Queue stores: {Cost, CurrentNode, PathSoFar}
@@ -49,10 +53,11 @@ vector<pair<int, vector<string>>> findKShortestPaths(const string& start, const 
         visit_counts[u]++;
 
         // Explore Neighbors
-        if (adj_list.find(u) != adj_list.end()) {
-            for (const auto& edge : adj_list[u]) {
-                string v = edge.destination;
-                int new_cost = cost + edge.weight;
+        if (graph.find(u) != graph.end()) {
+            for (const auto& edge : graph.at(u)) {
+                string v = edge.first;
+                int weight = edge.second;
+                int new_cost = cost + weight;
 
                 // Cycle Prevention: Don't go back to a node already in THIS specific path history
                 bool cycle = false;
@@ -106,8 +111,37 @@ int main() {
     // ==========================================
     CROW_ROUTE(app, "/<path>")
     .methods(crow::HTTPMethod::OPTIONS)
-    ([](const crow::request& req){
+    ([](const crow::request& req, const std::string& path){
         return crow::response(200);
+    });
+
+    // ==========================================
+    // ROOT ENDPOINT
+    // ==========================================
+    CROW_ROUTE(app, "/")
+    ([](){
+        json response = {
+            {"status", "ok"},
+            {"message", "Flight Booking API Server"},
+            {"version", "1.0.0"},
+            {"endpoints", {
+                {"/health", "Health check endpoint"},
+                {"GET /api/airports", "Get all airports"},
+                {"GET /api/flights", "Get flights (limit: 10 by default)"},
+                {"GET /api/search?from=X&to=Y", "Search flights by route"},
+                {"GET /api/search_date?date=YYYY-MM-DD", "Search flights by date"},
+                {"GET /api/search_smart?from=X&to=Y&date=YYYY-MM-DD", "Smart route search (K-shortest paths)"}
+            }}
+        };
+        return crow::response(response.dump());
+    });
+
+    // ==========================================
+    // HEALTH CHECK ENDPOINT
+    // ==========================================
+    CROW_ROUTE(app, "/health")
+    ([](){
+        return crow::response(200, "OK");
     });
 
     // ==========================================
@@ -131,14 +165,32 @@ int main() {
         const char* src = req.url_params.get("from");
         const char* dst = req.url_params.get("to");
         if (!src || !dst) return crow::response(400, "Missing 'from' or 'to'");
-        return crow::response(db.search_flights(src, dst).dump());
+
+        // JsonDB has no search_flights, so fetch flights and filter locally
+        json all_flights = db.get_flights_limited(std::numeric_limits<int>::max());
+        json results = json::array();
+        for (const auto& f : all_flights) {
+            if (f.value("from", "") == std::string(src) && f.value("to", "") == std::string(dst)) {
+                results.push_back(f);
+            }
+        }
+        return crow::response(results.dump());
     });
 
     CROW_ROUTE(app, "/api/search_date")
     ([](const crow::request& req){
         const char* date = req.url_params.get("date");
         if (!date) return crow::response(400, "Missing 'date'");
-        return crow::response(db.search_flights_by_date(date).dump());
+
+        // JsonDB has no search_flights_by_date, so fetch flights and filter locally
+        json all_flights = db.get_flights_limited(std::numeric_limits<int>::max());
+        json results = json::array();
+        for (const auto& f : all_flights) {
+            if (f.value("date", "") == std::string(date)) {
+                results.push_back(f);
+            }
+        }
+        return crow::response(results.dump());
     });
 
     // 3. SMART ROUTING SEARCH (New!)
@@ -245,10 +297,10 @@ int main() {
         }
     });
 
-    std::cout << "Server running on port " << std::getenv("PORT") ? std::getenv("PORT") : "18080" << std::endl;
+    std::cout << "Server running on port " << (std::getenv("PORT") ? std::getenv("PORT") : "8080") << std::endl;
     
     // Railway requires listening on 0.0.0.0 and the $PORT env variable
-    int port = 18080;
+    int port = 8080;
     if (const char* env_p = std::getenv("PORT")) {
         port = std::stoi(env_p);
     }
