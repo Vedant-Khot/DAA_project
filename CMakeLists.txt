@@ -42,6 +42,9 @@ set(CROW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(CROW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(CROW_USE_BOOST OFF CACHE BOOL "" FORCE) # Ensure we use ASIO, not Boost
 
+# Tell Crow where to find ASIO before fetching it
+set(ASIO_INCLUDE_DIR "${asio_SOURCE_DIR}/asio/include" CACHE STRING "ASIO include directory" FORCE)
+
 FetchContent_Declare(
     Crow
     # Using v1.2.0 (Latest stable)
@@ -53,7 +56,7 @@ FetchContent_MakeAvailable(Crow)
 # Build the final executable
 # ============================================================
 # NOTE: Ensure the file name here matches exactly what is on your disk
-add_executable(server_app main.cpp JsonDB.cpp) 
+add_executable(server_app main.cpp jsondb.cpp) 
 
 # Include ASIO headers explicitly if Crow doesn't pick them up automatically
 target_include_directories(server_app PRIVATE
