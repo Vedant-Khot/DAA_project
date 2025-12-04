@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        /* CSS STYLES - EXACTLY THE SAME AS BEFORE */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Inter", "Segoe UI", sans-serif; }
         body { background: #0f172a; min-height: 100vh; color: #e2e8f0; }
         .header { background: linear-gradient(135deg, #1e40af 0%, #7c3aed 100%); padding: 40px 20px; position: relative; overflow: hidden; }
@@ -31,16 +30,21 @@
         .search-button { width: 100%; padding: 16px; background: linear-gradient(135deg, #1e40af 0%, #7c3aed 100%); border: none; border-radius: 12px; color: white; font-size: 16px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.3s; box-shadow: 0 10px 25px rgba(30, 64, 175, 0.3); }
         .search-button:hover { transform: translateY(-2px); box-shadow: 0 15px 35px rgba(30, 64, 175, 0.4); }
         .main-content { max-width: 1400px; margin: 40px auto; padding: 0 20px; }
+        .content-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 30px; margin-bottom: 30px; }
         .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
         .section-title { font-size: 24px; font-weight: 700; color: white; }
         .filter-chips { display: flex; gap: 10px; }
         .chip { padding: 8px 16px; background: #1e293b; border: 1px solid #334155; border-radius: 20px; font-size: 13px; color: #cbd5e1; cursor: pointer; transition: all 0.3s; }
         .chip:hover, .chip.active { background: #1e40af; border-color: #1e40af; color: white; }
-        .map-section { background: #1e293b; border-radius: 16px; overflow: hidden; margin-bottom: 30px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
-        .map-header { padding: 20px 30px; background: #334155; display: flex; justify-content: space-between; align-items: center; }
+        .map-section { background: #1e293b; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.3); height: 100%; display: flex; flex-direction: column; }
+        .map-header { padding: 20px 30px; background: #334155; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
         .map-title { font-size: 18px; font-weight: 700; color: #f1f5f9; }
-        #map { width: 100%; height: 400px; background: #0f172a; }
-        .flights-table { background: #1e293b; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
+        #map { width: 100%; flex: 1; min-height: 500px; background: #0f172a; }
+        .flights-table { background: #1e293b; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-height: 600px; overflow-y: auto; }
+        .flights-table::-webkit-scrollbar { width: 8px; }
+        .flights-table::-webkit-scrollbar-track { background: #0f172a; }
+        .flights-table::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        .flights-table::-webkit-scrollbar-thumb:hover { background: #3b82f6; }
         .table-header { display: grid; grid-template-columns: 2.5fr 2fr 1.5fr 1fr 1fr; padding: 20px 30px; background: #334155; font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
         .flight-row { display: grid; grid-template-columns: 2.5fr 2fr 1.5fr 1fr 1fr; padding: 25px 30px; align-items: center; border-bottom: 1px solid #334155; transition: all 0.3s; cursor: pointer; }
         .flight-row:hover { background: #2d3748; }
@@ -64,17 +68,44 @@
         .action-cell { text-align: center; }
         .book-button { padding: 10px 24px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; border-radius: 8px; color: white; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
         .book-button:hover { transform: scale(1.05); box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4); }
-        
-        /* Loader Style */
         .loader { text-align: center; padding: 20px; color: #fff; display: none; font-size: 18px; }
         .loader i { margin-right: 10px; }
-        
-        @media(max-width: 1200px) { .table-header, .flight-row { grid-template-columns: 2fr 2fr 1fr 1fr; } .duration-cell { display: none; } }
+        .filters-container { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 25px 30px; border-radius: 20px; margin-bottom: 30px; display: flex; gap: 40px; align-items: center; flex-wrap: wrap; box-shadow: 0 10px 40px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); }
+        .filter-group { flex: 1; min-width: 180px; }
+        .filter-group > label { color: #f1f5f9; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .filter-group > label i { color: #3b82f6; font-size: 16px; }
+        .radio-group { display: flex; gap: 12px; flex-wrap: wrap; }
+        .radio-option { position: relative; }
+        .radio-option input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
+        .radio-option label { display: inline-block; padding: 10px 20px; background: rgba(15, 23, 42, 0.6); border: 2px solid #334155; border-radius: 10px; color: #cbd5e1; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.3s; user-select: none; }
+        .radio-option input[type="radio"]:checked + label { background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); border-color: #3b82f6; color: white; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4); transform: translateY(-2px); }
+        .radio-option label:hover { border-color: #3b82f6; transform: translateY(-1px); }
+        .price-slider-container { position: relative; }
+        .price-slider { width: 100%; height: 6px; border-radius: 3px; background: linear-gradient(90deg, #0f172a 0%, #3b82f6 100%); outline: none; -webkit-appearance: none; }
+        .price-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); cursor: pointer; box-shadow: 0 2px 10px rgba(59, 130, 246, 0.5); transition: all 0.3s; }
+        .price-slider::-webkit-slider-thumb:hover { transform: scale(1.2); box-shadow: 0 4px 15px rgba(59, 130, 246, 0.7); }
+        .price-slider::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); cursor: pointer; border: none; box-shadow: 0 2px 10px rgba(59, 130, 246, 0.5); transition: all 0.3s; }
+        .price-value { display: inline-block; padding: 6px 14px; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); border-radius: 8px; color: white; font-weight: 700; font-size: 15px; margin-left: 8px; box-shadow: 0 2px 10px rgba(59, 130, 246, 0.3); }
+        .filter-select { width: 100%; padding: 12px 16px; border-radius: 10px; border: 2px solid #334155; background: rgba(15, 23, 42, 0.6); color: #f1f5f9; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.3s; outline: none; }
+        .filter-select:hover, .filter-select:focus { border-color: #3b82f6; background: rgba(15, 23, 42, 0.9); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
+        .filter-select option { background: #1e293b; color: #f1f5f9; padding: 10px; }
+        .sort-buttons { display: flex; gap: 10px; }
+        .sort-chip { padding: 10px 20px; background: rgba(15, 23, 42, 0.6); border: 2px solid #334155; border-radius: 10px; font-size: 14px; font-weight: 600; color: #cbd5e1; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; gap: 8px; }
+        .sort-chip:hover { border-color: #3b82f6; transform: translateY(-2px); }
+        .sort-chip.active { background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-color: #10b981; color: white; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); }
+        .sort-chip i { font-size: 12px; }
+        @media(max-width: 1024px) { .filters-container { gap: 25px; } .filter-group { min-width: 150px; } }
+        @media(max-width: 768px) { .filters-container { flex-direction: column; align-items: stretch; } .filter-group { width: 100%; } .sort-buttons { flex-direction: column; } }
+        @media(max-width: 1200px) { 
+            .content-grid { grid-template-columns: 1fr; }
+            .map-section { min-height: 400px; }
+            .table-header, .flight-row { grid-template-columns: 2fr 2fr 1fr 1fr; } 
+            .duration-cell { display: none; } 
+        }
         @media(max-width: 900px) { .search-grid { grid-template-columns: 1fr; } .table-header { display: none; } .flight-row { grid-template-columns: 1fr; gap: 15px; padding: 20px; } .route-cell, .price-cell, .action-cell { justify-content: flex-start; } }
     </style>
 </head>
 <body>
-    <!-- Header Section -->
     <div class="header">
         <div class="header-content">
             <div class="logo-section">
@@ -82,7 +113,6 @@
                 <div class="logo-text"><h1>SkyBooker</h1><p>Find your perfect flight</p></div>
             </div>
 
-            <!-- Search Panel -->
             <div class="search-panel">
                 <div class="search-tabs">
                     <button class="tab active"><i class="fas fa-plane"></i> One Way</button>
@@ -107,7 +137,7 @@
                     <div class="input-field">
                         <label>Departure</label>
                         <div class="input-wrapper"><i class="fas fa-calendar"></i>
-                            <input type="date" value="2025-12-01">
+                            <input type="date" id="datePicker" value="2025-12-05">
                         </div>
                     </div>
 
@@ -126,39 +156,89 @@
         </div>
     </div>
 
-    <!-- Main Content -->
     <div class="main-content">
-        <!-- Map Section -->
-        <div class="map-section">
-            <div class="map-header">
-                <h3 class="map-title">Route Map</h3>
-            </div>
-            <div id="map"></div>
-        </div>
-
         <div class="section-header">
             <h2 class="section-title" id="resultsTitle">Available Flights</h2>
         </div>
 
-        <!-- Loader -->
         <div id="loader" class="loader">
             <i class="fas fa-spinner fa-spin"></i> Finding best flights...
         </div>
 
-        <!-- Flights Table (Dynamically Populated) -->
-        <div class="flights-table">
-            <div class="table-header">
-                <div>Airline</div>
-                <div>Route</div>
-                <div>Duration</div>
-                <div>Price</div>
-                <div>Action</div>
+        <div class="filters-container">
+            <div class="filter-group">
+                <label><i class="fas fa-route"></i> Stops</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" id="stopAll" name="stops" value="all" checked onchange="applyFilters()">
+                        <label for="stopAll">All</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="stopDirect" name="stops" value="0" onchange="applyFilters()">
+                        <label for="stopDirect">Direct</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="stopOne" name="stops" value="1" onchange="applyFilters()">
+                        <label for="stopOne">1+ Stops</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <label><i class="fas fa-dollar-sign"></i> Max Price: <span class="price-value" id="priceVal">₹20000</span></label>
+                <div class="price-slider-container">
+                    <input type="range" class="price-slider" id="priceRange" min="2000" max="20000" step="500" value="20000" oninput="document.getElementById('priceVal').innerText = '₹'+this.value" onchange="applyFilters()">
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <label><i class="fas fa-plane-departure"></i> Airline</label>
+                <select class="filter-select" id="airlineFilter" onchange="applyFilters()">
+                    <option value="all">All Airlines</option>
+                    <option value="IndiGo">IndiGo</option>
+                    <option value="Air India">Air India</option>
+                    <option value="Vistara">Vistara</option>
+                    <option value="SpiceJet">SpiceJet</option>
+                    <option value="Akasa Air">Akasa Air</option>
+                </select>
             </div>
             
-            <div id="flightListContainer">
-                <!-- Flight rows will be injected here via JS -->
-                <div style="padding:40px; text-align:center; color:#64748b;">
-                    Please select source and destination to see flights.
+            <div class="filter-group" style="margin-left: auto;">
+                <label><i class="fas fa-sort"></i> Sort By</label>
+                <div class="sort-buttons">
+                    <div class="sort-chip" id="sortPrice" onclick="sortFlights('price')">
+                        <i class="fas fa-arrow-down"></i> Cheapest
+                    </div>
+                    <div class="sort-chip" id="sortTime" onclick="sortFlights('time')">
+                        <i class="fas fa-clock"></i> Fastest
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-grid">
+            <!-- Map Section -->
+            <div class="map-section">
+                <div class="map-header">
+                    <h3 class="map-title"><i class="fas fa-map-marked-alt"></i> Route Map</h3>
+                </div>
+                <div id="map"></div>
+            </div>
+
+            <!-- Flights Table -->
+            <div class="flights-table">
+                <div class="table-header">
+                    <div>Airline</div>
+                    <div>Route</div>
+                    <div>Duration</div>
+                    <div>Price</div>
+                    <div>Action</div>
+                </div>
+                
+                <div id="flightListContainer">
+                    <div style="padding:40px; text-align:center; color:#64748b;">
+                        Please select source and destination to see flights.
+                    </div>
                 </div>
             </div>
         </div>
@@ -166,84 +246,11 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-// const BASE_URL = "https://daa-project-api-services.onrender.com"; 
-const BASE_URL = "http://localhost:18080"; // Use this for local testing
-// CONFIGURATION
-const SOURCE = "DEL";
-const DEST = "BLR";
-const DATE = "2025-12-05"; // The date you will search for
-const INTERMEDIATE_HUBS = ["BOM", "HYD", "CCU", "MAA", "AMD"]; // Cities to stop at
-
-async function addFlight(flightData) {
-    try {
-        const res = await fetch(`${BASE_URL}/admin/flight/add`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(flightData)
-        });
-        return res.status === 201;
-    } catch (e) { return false; }
-}
-
-async function generateMultiPaths() {
-    console.log(`🚀 Generating paths from ${SOURCE} to ${DEST} on ${DATE}...`);
-
-    let flightCount = 1;
-
-    // 1. CREATE DIRECT FLIGHT (Fastest)
-    await addFlight({
-        id: `AUTO_DIRECT_${flightCount++}`,
-        airline: "IndiGo",
-        from_code: SOURCE,
-        to_code: DEST,
-        date: DATE,
-        departure: "09:00",
-        arrival: "11:30",
-        duration: "2h 30m",
-        price: 7500
-    });
-    console.log("✅ Added Direct Path");
-
-    // 2. CREATE CONNECTING PATHS
-    for (const hub of INTERMEDIATE_HUBS) {
-        // Leg 1: Source -> Hub (Morning Flight)
-        const leg1_Id = `AUTO_LEG1_${hub}_${flightCount++}`;
-        await addFlight({
-            id: leg1_Id,
-            airline: ["Air India", "Vistara", "SpiceJet"][Math.floor(Math.random()*3)],
-            from_code: SOURCE,
-            to_code: hub,
-            date: DATE,
-            departure: "06:00", // Early morning
-            arrival: "08:00",
-            duration: "2h 00m",
-            price: 3000 + Math.floor(Math.random() * 1000)
-        });
-
-        // Leg 2: Hub -> Dest (Afternoon Flight - Ensures valid connection time)
-        const leg2_Id = `AUTO_LEG2_${hub}_${flightCount++}`;
-        await addFlight({
-            id: leg2_Id,
-            airline: ["Air India", "Vistara", "Akasa Air"][Math.floor(Math.random()*3)],
-            from_code: hub,
-            to_code: DEST,
-            date: DATE,
-            departure: "10:00", // Departs 2 hours after Leg 1 arrives
-            arrival: "12:00",
-            duration: "2h 00m",
-            price: 3000 + Math.floor(Math.random() * 1000)
-        });
-
-        console.log(`✅ Added Path via ${hub}`);
-    }
-
-    console.log("✨ DONE! Now search for these exact airports and date on your website.");
-}
-
-generateMultiPaths();
-        // const BASE_URL = "https://daaproject-production.up.railway.app";
-        // const BASE_URL = "http://localhost:18080"; // Use this for local testing
+        // const BASE_URL = "http://localhost:18080";
+        const BASE_URL = "https://daa-project-1-7w2x.onrender.com";
         let allAirports = [];
+        let allFetchedRoutes = [];
+        let mapLayers = [];
 
         // Initialize Map
         const map = L.map('map').setView([20.5937, 78.9629], 5);
@@ -254,13 +261,12 @@ generateMultiPaths();
 
         const airportIcon = L.divIcon({
             className: 'custom-marker',
-            html: '<div style="background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5);"><i class="fas fa-plane" style="font-size: 14px;"></i></div>',
-            iconSize: [30, 30], iconAnchor: [15, 15]
+            html: '<div style="background: #2563eb; width: 32px; height: 32px; border-radius: 50%; border: 3px solid white; box-shadow: 0 3px 10px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white; font-size: 14px;">✈</div>',
+            iconSize: [32, 32],
+            iconAnchor: [16, 16]
         });
 
-        let mapLayers = [];
-
-        // 1. Load Airports
+        // Load Airports
         async function loadAirports() {
             try {
                 const res = await fetch(`${BASE_URL}/api/airports`);
@@ -270,7 +276,6 @@ generateMultiPaths();
                 const toSelect = document.getElementById('toAirport');
                 let options = '<option value="">Select city</option>';
                 
-                // Sort airports alphabetically for better UX
                 allAirports.sort((a,b) => a.city.localeCompare(b.city));
 
                 allAirports.forEach(apt => {
@@ -285,12 +290,11 @@ generateMultiPaths();
             }
         }
 
-        // 2. Search Flights (Updated for Smart Routes)
+        // Search Flights
         async function searchFlights() {
             const fromCode = document.getElementById('fromAirport').value;
             const toCode = document.getElementById('toAirport').value;
-            // Get date from picker or default
-            let dateVal = document.getElementById('datePicker') ? document.getElementById('datePicker').value : "2025-12-02";
+            const dateVal = document.getElementById('datePicker').value;
             
             if(!fromCode || !toCode) return alert("Please select source and destination.");
 
@@ -300,137 +304,180 @@ generateMultiPaths();
             container.innerHTML = "";
             loader.style.display = "block";
 
-            // Clear map
-            mapLayers.forEach(l => map.removeLayer(l));
-            mapLayers = [];
-
             try {
-                // Call the Smart Search Endpoint
                 const res = await fetch(`${BASE_URL}/api/search?from=${fromCode}&to=${toCode}&date=${dateVal}`);
-                const routes = await res.json();
+                allFetchedRoutes = await res.json();
                 
                 loader.style.display = "none";
-                document.getElementById('resultsTitle').innerText = `Available Flights (${routes.length})`;
-
-                if(routes.length === 0) {
-                    container.innerHTML = `<div style="padding:40px; text-align:center;">No flights found for ${dateVal}. <br> Try checking dates between Dec 01 - Dec 10.</div>`;
+                
+                if(allFetchedRoutes.length === 0) {
+                    container.innerHTML = `<div style="padding:40px; text-align:center; color:#64748b;">No flights found for ${dateVal}.</div>`;
                     return;
                 }
 
-                // Render Routes
-                routes.forEach((route, index) => {
-                    // Extract main details from the first segment
-                    const firstLeg = route.segments[0];
-                    const lastLeg = route.segments[route.segments.length - 1];
-                    const airline = firstLeg.airline;
-                    const stops = route.stops === 0 ? "Non-Stop" : `${route.stops} Stop(s)`;
-                    
-                    // Build path description if connecting
-                    let routeDesc = "";
-                    if(route.stops > 0) {
-                        const via = route.segments.map(s => s.to).slice(0, -1).join(", ");
-                        routeDesc = `<div style="font-size:11px; color:#94a3b8;">Via ${via}</div>`;
-                    }
-
-                    // Visualize on Map (Draw the first result by default)
-                    if(index === 0) drawRouteOnMap(route.segments);
-
-                    const row = `
-                    <div class="flight-row" onmouseenter='drawRouteOnMap(${JSON.stringify(route.segments)})'>
-                        <div class="airline-cell">
-                            <div class="airline-logo"><i class="fas fa-plane"></i></div>
-                            <div class="airline-info">
-                                <h4>${airline}</h4>
-                                <p>${firstLeg.flight_id}</p>
-                            </div>
-                        </div>
-
-                        <div class="route-cell">
-                            <div class="route-point">
-                                <div class="route-time">${firstLeg.dep}</div>
-                                <div class="route-code">${firstLeg.from}</div>
-                            </div>
-                            <div class="route-line"></div>
-                            <div class="route-point">
-                                <div class="route-time">${lastLeg.arr}</div>
-                                <div class="route-code">${lastLeg.to}</div>
-                            </div>
-                        </div>
-
-                        <div class="duration-cell">
-                            <div class="duration-time">${route.duration_fmt}</div>
-                            <div class="duration-badge">${stops}</div>
-                            ${routeDesc}
-                        </div>
-
-                        <div class="price-cell">
-                            <div class="price-amount">₹${route.total_price}</div>
-                            <div class="price-label">per person</div>
-                        </div>
-
-                        <div class="action-cell">
-<button class="book-button" onclick='viewDetails(${JSON.stringify(route)})'>View Details</button>
-                        </div>
-                    </div>`;
-                    
-                    container.innerHTML += row;
-                });
+                applyFilters();
 
             } catch (error) {
                 loader.style.display = "none";
-                container.innerHTML = `<div style="padding:20px; text-align:center; color:red;">Error loading flights.</div>`;
                 console.error(error);
+                alert("Error fetching flights");
             }
         }
-function viewDetails(flightObject) {
-    // Save the specific flight data to browser memory
-    localStorage.setItem('selectedFlight', JSON.stringify(flightObject));
-    // Go to the details page
-    window.location.href = 'flight-details.html';
-}
-        // 3. Draw Complex Routes (Multi-Leg)
+
+        // Apply Filters
+        function applyFilters() {
+            const stopFilter = document.querySelector('input[name="stops"]:checked').value;
+            const maxPrice = parseInt(document.getElementById('priceRange').value);
+            const selectedAirline = document.getElementById('airlineFilter').value;
+
+            let filteredData = allFetchedRoutes.filter(route => {
+                if (stopFilter === "0" && route.stops > 0) return false;
+                if (stopFilter === "1" && route.stops === 0) return false;
+                if (route.total_price > maxPrice) return false;
+                
+                if (selectedAirline !== "all") {
+                    const mainAirline = route.segments[0].airline; 
+                    if (mainAirline !== selectedAirline) return false;
+                }
+
+                return true;
+            });
+
+            document.getElementById('resultsTitle').innerText = `Available Flights (${filteredData.length})`;
+            renderFlights(filteredData);
+        }
+
+        // Sort Flights
+        function sortFlights(criteria) {
+            // Remove active class from all sort chips
+            document.getElementById('sortPrice').classList.remove('active');
+            document.getElementById('sortTime').classList.remove('active');
+            
+            // Add active class to clicked chip
+            if (criteria === 'price') {
+                document.getElementById('sortPrice').classList.add('active');
+                allFetchedRoutes.sort((a, b) => a.total_price - b.total_price);
+            } else if (criteria === 'time') {
+                document.getElementById('sortTime').classList.add('active');
+                allFetchedRoutes.sort((a, b) => a.total_time - b.total_time);
+            }
+            applyFilters();
+        }
+
+        // Render Flights
+        function renderFlights(routes) {
+            const container = document.getElementById('flightListContainer');
+            container.innerHTML = "";
+
+            if (routes.length === 0) {
+                container.innerHTML = `<div style="padding:40px; text-align:center; color:#64748b;">No flights match your filters.</div>`;
+                return;
+            }
+
+            routes.forEach((route, index) => {
+                const firstLeg = route.segments[0];
+                const lastLeg = route.segments[route.segments.length - 1];
+                const airline = firstLeg.airline;
+                const stops = route.stops === 0 ? "Non-Stop" : `${route.stops} Stop(s)`;
+                
+                let routeDesc = "";
+                if(route.stops > 0) {
+                    const via = route.segments.map(s => s.to).slice(0, -1).join(", ");
+                    routeDesc = `<div style="font-size:11px; color:#94a3b8;">Via ${via}</div>`;
+                }
+
+                if(index === 0) drawRouteOnMap(route.segments);
+
+                const row = `
+                <div class="flight-row" onmouseenter='drawRouteOnMap(${JSON.stringify(route.segments).replace(/'/g, "&apos;")})'>
+                    <div class="airline-cell">
+                        <div class="airline-logo"><i class="fas fa-plane"></i></div>
+                        <div class="airline-info">
+                            <h4>${airline}</h4>
+                            <p>${firstLeg.flight_id}</p>
+                        </div>
+                    </div>
+
+                    <div class="route-cell">
+                        <div class="route-point">
+                            <div class="route-time">${firstLeg.dep}</div>
+                            <div class="route-code">${firstLeg.from}</div>
+                        </div>
+                        <div class="route-line"></div>
+                        <div class="route-point">
+                            <div class="route-time">${lastLeg.arr}</div>
+                            <div class="route-code">${lastLeg.to}</div>
+                        </div>
+                    </div>
+
+                    <div class="duration-cell">
+                        <div class="duration-time">${route.duration_fmt}</div>
+                        <div class="duration-badge">${stops}</div>
+                        ${routeDesc}
+                    </div>
+
+                    <div class="price-cell">
+                        <div class="price-amount">₹${route.total_price}</div>
+                        <div class="price-label">per person</div>
+                    </div>
+
+                    <div class="action-cell">
+                        <button class="book-button" onclick='viewDetails(${JSON.stringify(route).replace(/'/g, "&apos;")})'>View Details</button>
+                    </div>
+                </div>`;
+                
+                container.innerHTML += row;
+            });
+        }
+
+        // View Details
+        function viewDetails(flightObject) {
+            localStorage.setItem('selectedFlight', JSON.stringify(flightObject));
+            window.location.href = 'flight-details.html';
+        }
+
+        // Draw Route on Map
         function drawRouteOnMap(segments) {
-            // Clear previous
             mapLayers.forEach(l => map.removeLayer(l));
             mapLayers = [];
 
             const pathCoords = [];
 
-            // Collect all points in the path
             segments.forEach(seg => {
                 const fromApt = allAirports.find(a => a.code === seg.from);
                 const toApt = allAirports.find(a => a.code === seg.to);
                 
                 if(fromApt && toApt) {
-                    // Safe access for long/lng
                     const fLat = fromApt.lat, fLng = fromApt.long || fromApt.lng;
                     const tLat = toApt.lat, tLng = toApt.long || toApt.lng;
 
                     pathCoords.push([fLat, fLng]);
                     pathCoords.push([tLat, tLng]);
 
-                    // Add Markers
                     const m1 = L.marker([fLat, fLng], {icon: airportIcon}).addTo(map).bindPopup(seg.from);
                     const m2 = L.marker([tLat, tLng], {icon: airportIcon}).addTo(map).bindPopup(seg.to);
                     mapLayers.push(m1, m2);
                 }
             });
 
-            // Draw Polyline (Connecting all points)
-            const line = L.polyline(pathCoords, {
-                color: '#3b82f6', weight: 4, opacity: 0.8, lineJoin: 'round', dashArray: '10, 10'
+            // Base line
+            const baseLine = L.polyline(pathCoords, {
+                color: '#3b82f6', weight: 4, opacity: 0.3, dashArray: '10, 10'
             }).addTo(map);
-            
-            mapLayers.push(line);
+            mapLayers.push(baseLine);
 
-            // Animate
+            // Animated line
+            const animLine = L.polyline(pathCoords, {
+                color: '#8b5cf6', weight: 4, opacity: 0.8, dashArray: '10, 10', dashOffset: '0'
+            }).addTo(map);
+            mapLayers.push(animLine);
+
             let offset = 0;
             const anim = setInterval(() => {
-                offset += 1;
-                line.setStyle({ dashOffset: offset.toString() });
-            }, 100);
+                offset = (offset + 1) % 20;
+                animLine.setStyle({ dashOffset: offset.toString() });
+            }, 50);
             
-            // Zoom to fit
             if(pathCoords.length > 0) map.fitBounds(L.latLngBounds(pathCoords), {padding: [50,50]});
         }
 
