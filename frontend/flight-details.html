@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Details</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Inter", "Segoe UI", sans-serif; }
+        body { background: #f8fafc; min-height: 100vh; color: #1e293b; }
+        .header { background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%); padding: 30px 20px; position: relative; }
+        .header-content { max-width: 1400px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; }
+        .logo-section { display: flex; align-items: center; gap: 15px; }
+        .logo-icon { width: 50px; height: 50px; background: #ffffff; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #2563eb; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }
+        .logo-text h1 { font-size: 26px; font-weight: 700; color: white; letter-spacing: -0.5px; }
+        .logo-text p { font-size: 13px; color: rgba(255, 255, 255, 0.9); }
+        .back-button { padding: 10px 20px; background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 10px; color: white; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.3s; }
+        .back-button:hover { background: rgba(255, 255, 255, 0.3); }
+        .main-content { max-width: 1400px; margin: -20px auto 40px; padding: 0 20px; position: relative; z-index: 2; }
+        .flight-info-card { background: #ffffff; border-radius: 20px; padding: 30px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06); margin-bottom: 25px; }
+        .flight-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 2px solid #f1f5f9; flex-wrap: wrap; gap: 15px; }
+        .airline-section { display: flex; align-items: center; gap: 15px; }
+        .airline-logo-big { width: 60px; height: 60px; background: linear-gradient(135deg, #eff6ff 0%, #e0e7ff 100%); border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 28px; color: #2563eb; }
+        .airline-details h2 { font-size: 24px; font-weight: 700; color: #1e293b; margin-bottom: 5px; }
+        .airline-details p { font-size: 14px; color: #64748b; }
+        .price-section { text-align: right; }
+        .price-big { font-size: 36px; font-weight: 700; color: #0f172a; margin-bottom: 5px; }
+        .price-label { font-size: 13px; color: #64748b; }
+        .route-timeline { display: grid; grid-template-columns: 1fr auto 1fr; gap: 30px; align-items: center; margin-bottom: 30px; }
+        .timeline-point { text-align: center; }
+        .timeline-point.departure { text-align: left; }
+        .timeline-point.arrival { text-align: right; }
+        .city-name { font-size: 20px; font-weight: 700; color: #1e293b; margin-bottom: 5px; }
+        .time-big { font-size: 32px; font-weight: 700; color: #2563eb; margin-bottom: 5px; }
+        .date-info { font-size: 14px; color: #64748b; }
+        .timeline-center { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .flight-line { width: 200px; height: 3px; background: linear-gradient(90deg, #2563eb 0%, #7c3aed 100%); position: relative; }
+        .flight-line::after { content: '✈'; position: absolute; right: -10px; top: -10px; font-size: 18px; color: #2563eb; }
+        .duration-big { font-size: 18px; font-weight: 600; color: #1e293b; }
+        .stops-badge { display: inline-block; padding: 6px 14px; background: #dcfce7; color: #16a34a; border-radius: 14px; font-size: 12px; font-weight: 600; }
+        .map-section { background: #ffffff; border-radius: 20px; padding: 25px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06); margin-bottom: 25px; }
+        .section-title { font-size: 20px; font-weight: 700; color: #1e293b; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        #map { height: 450px; width: 100%; border-radius: 15px; overflow: hidden; }
+        .details-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 25px; }
+        .detail-card { background: #ffffff; border-radius: 20px; padding: 25px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06); }
+        .detail-card h3 { font-size: 18px; font-weight: 700; color: #1e293b; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
+        .detail-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
+        .detail-item:last-child { border-bottom: none; }
+        .detail-label { font-size: 14px; color: #64748b; }
+        .detail-value { font-size: 14px; font-weight: 600; color: #1e293b; }
+        .action-section { background: #ffffff; border-radius: 20px; padding: 30px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
+        .action-info h3 { font-size: 22px; font-weight: 700; color: #1e293b; margin-bottom: 5px; }
+        .action-info p { font-size: 14px; color: #64748b; }
+        .book-now-btn { padding: 16px 40px; background: #16a34a; border: none; border-radius: 12px; color: white; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 15px rgba(22, 163, 74, 0.3); }
+        .book-now-btn:hover { background: #15803d; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(22, 163, 74, 0.4); }
+        .animated-path { animation: dash 1s linear infinite; }
+        @keyframes dash { to { stroke-dashoffset: -20; } }
+        @media(max-width: 900px) { .route-timeline { grid-template-columns: 1fr; gap: 20px; } .timeline-point.departure, .timeline-point.arrival { text-align: center; } .timeline-center { margin: 30px 0; } .flight-line { width: 3px; height: 100px; background: linear-gradient(180deg, #2563eb 0%, #7c3aed 100%); } .flight-line::after { transform: rotate(90deg); right: auto; left: -7px; top: auto; bottom: -11px; } .header-content { flex-direction: column; gap: 15px; } .flight-header { flex-direction: column; text-align: center; } .price-section { text-align: center; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="logo-section">
+                <div class="logo-icon"><i class="fas fa-plane-departure"></i></div>
+                <div class="logo-text"><h1>SkyBooker</h1><p>Flight Details</p></div>
+            </div>
+            <button class="back-button" onclick="window.location.href='home.html'">
+                <i class="fas fa-arrow-left"></i> Back to Search
+            </button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <!-- Flight Info Card -->
+        <div class="flight-info-card">
+            <div class="flight-header">
+                <div class="airline-section">
+                    <div class="airline-logo-big"><i class="fas fa-plane"></i></div>
+                    <div class="airline-details">
+                        <h2 id="dAirline">Loading...</h2>
+                        <p id="dFlightId">...</p>
+                    </div>
+                </div>
+                <div class="price-section">
+                    <div class="price-big" id="dPrice">₹0</div>
+                    <div class="price-label">per person</div>
+                </div>
+            </div>
+
+            <div class="route-timeline">
+                <div class="timeline-point departure">
+                    <div class="city-name" id="dFromCity">...</div>
+                    <div class="time-big" id="dDepTime">...</div>
+                    <div class="date-info" id="dDate">...</div>
+                </div>
+
+                <div class="timeline-center">
+                    <div class="duration-big" id="dDuration">...</div>
+                    <div class="flight-line"></div>
+                    <div class="stops-badge" id="dStops">Non-Stop</div>
+                </div>
+
+                <div class="timeline-point arrival">
+                    <div class="city-name" id="dToCity">...</div>
+                    <div class="time-big" id="dArrTime">...</div>
+                    <div class="date-info" id="dDateArr">...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Map Section -->
+        <div class="map-section">
+            <div class="section-title"><i class="fas fa-map-marked-alt"></i> Flight Route</div>
+            <div id="map"></div>
+        </div>
+
+        <!-- Details Grid -->
+        <div class="details-grid">
+            <div class="detail-card">
+                <h3><i class="fas fa-info-circle"></i> Flight Information</h3>
+                <div class="detail-item"><span class="detail-label">Route</span><span class="detail-value" id="dRouteInfo">...</span></div>
+                <div class="detail-item"><span class="detail-label">Class</span><span class="detail-value">Economy</span></div>
+                <div class="detail-item"><span class="detail-label">Stops</span><span class="detail-value" id="dStopsDetail">...</span></div>
+            </div>
+            <div class="detail-card">
+                <h3><i class="fas fa-suitcase"></i> Baggage Allowance</h3>
+                <div class="detail-item"><span class="detail-label">Cabin Bag</span><span class="detail-value">7 kg (1 piece)</span></div>
+                <div class="detail-item"><span class="detail-label">Check-in Bag</span><span class="detail-value">15 kg (1 piece)</span></div>
+            </div>
+            <div class="detail-card">
+                <h3><i class="fas fa-ticket-alt"></i> Fare Breakdown</h3>
+                <div class="detail-item"><span class="detail-label">Base Fare</span><span class="detail-value" id="dBaseFare">...</span></div>
+                <div class="detail-item"><span class="detail-label">Taxes & Fees</span><span class="detail-value">₹850</span></div>
+                <div class="detail-item"><span class="detail-label">Total</span><span class="detail-value" id="dTotalPrice">...</span></div>
+            </div>
+        </div>
+
+        <div class="action-section">
+            <div class="action-info">
+                <h3>Ready to Book?</h3>
+                <p>Secure your seat now. Limited availability at this price.</p>
+            </div>
+            <button class="book-now-btn" onclick="alert('Proceeding to Payment Gateway...')">
+                <i class="fas fa-check-circle"></i> Pay & Book
+            </button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // const BASE_URL = "https://daaproject-production.up.railway.app"; 
+        const BASE_URL= "http://localhost:18080"
+        
+        // 1. Retrieve Data from LocalStorage
+        const rawData = localStorage.getItem('selectedFlight');
+        if (!rawData) {
+            alert("No flight selected. Returning to search.");
+            window.location.href = 'index.html';
+        }
+        const flight = JSON.parse(rawData);
+
+        // 2. Initialize UI
+        function populateUI() {
+            const firstSegment = flight.segments[0];
+            const lastSegment = flight.segments[flight.segments.length - 1];
+
+            // Header Info
+            document.getElementById('dAirline').textContent = firstSegment.airline;
+            document.getElementById('dFlightId').textContent = `Flight ID: ${firstSegment.flight_id}`;
+            document.getElementById('dPrice').textContent = `₹${flight.total_price}`;
+
+            // Timeline
+            document.getElementById('dFromCity').textContent = firstSegment.from;
+            document.getElementById('dDepTime').textContent = firstSegment.dep;
+            document.getElementById('dDate').textContent = firstSegment.date;
+
+            document.getElementById('dToCity').textContent = lastSegment.to;
+            document.getElementById('dArrTime').textContent = lastSegment.arr;
+            document.getElementById('dDateArr').textContent = firstSegment.date;
+
+            document.getElementById('dDuration').textContent = flight.duration_fmt;
+            
+            // Stops Logic
+            const stopText = flight.stops === 0 ? "Non-Stop" : `${flight.stops} Stop(s)`;
+            const badge = document.getElementById('dStops');
+            badge.textContent = stopText;
+            if(flight.stops > 0) {
+                badge.style.background = "#fff7ed";
+                badge.style.color = "#c2410c";
+            }
+
+            // Details Grid
+            document.getElementById('dRouteInfo').textContent = `${firstSegment.from} ➝ ${lastSegment.to}`;
+            document.getElementById('dStopsDetail').textContent = stopText;
+            
+            // Math for Fare
+            const total = flight.total_price;
+            const tax = 850;
+            document.getElementById('dBaseFare').textContent = `₹${total - tax}`;
+            document.getElementById('dTotalPrice').textContent = `₹${total}`;
+        }
+
+        // 3. Render Map with Animation
+        async function renderMap() {
+            var map = L.map('map');
+            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18 }).addTo(map);
+
+            const airportIcon = L.divIcon({
+                className: 'custom-marker',
+                html: '<div style="background: #2563eb; width: 32px; height: 32px; border-radius: 50%; border: 3px solid white; box-shadow: 0 3px 10px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white; font-size: 14px;">✈</div>',
+                iconSize: [32, 32],
+                iconAnchor: [16, 16]
+            });
+
+            try {
+                // Fetch coordinates for all airports involved
+                const res = await fetch(`${BASE_URL}/api/airports`);
+                const allAirports = await res.json();
+
+                let pathCoords = [];
+
+                flight.segments.forEach(seg => {
+                    const fromApt = allAirports.find(a => a.code === seg.from);
+                    const toApt = allAirports.find(a => a.code === seg.to);
+
+                    if (fromApt && toApt) {
+                        const fromLat = fromApt.lat;
+                        const fromLng = fromApt.long || fromApt.lng;
+                        const toLat = toApt.lat;
+                        const toLng = toApt.long || toApt.lng;
+
+                        pathCoords.push([fromLat, fromLng]);
+                        pathCoords.push([toLat, toLng]);
+
+                        // Add markers
+                        L.marker([fromLat, fromLng], {icon: airportIcon}).addTo(map).bindPopup(seg.from);
+                        L.marker([toLat, toLng], {icon: airportIcon}).addTo(map).bindPopup(seg.to);
+                    }
+                });
+
+                // Draw Animated Polyline
+                if (pathCoords.length > 0) {
+                    // Create a canvas overlay for animation
+                    const polyline = L.polyline(pathCoords, { 
+                        color: "#2563eb", 
+                        weight: 4, 
+                        opacity: 0.3,
+                        dashArray: '10, 10'
+                    }).addTo(map);
+                    
+                    // Add animated overlay
+                    const animatedLine = L.polyline(pathCoords, { 
+                        color: "#7c3aed", 
+                        weight: 4, 
+                        opacity: 0.8,
+                        dashArray: '10, 10',
+                        dashOffset: '0',
+                        className: 'animated-path'
+                    }).addTo(map);
+                    
+                    // Animate the dash offset
+                    let offset = 0;
+                    setInterval(() => {
+                        offset = (offset + 1) % 20;
+                        animatedLine.setStyle({ dashOffset: offset.toString() });
+                    }, 50);
+                    
+                    map.fitBounds(pathCoords, { padding: [50, 50] });
+                } else {
+                    map.setView([20.5, 78.9], 5); // Fallback India view
+                }
+
+            } catch (e) {
+                console.error("Map Error:", e);
+                map.setView([20.5, 78.9], 5);
+            }
+        }
+
+        // Run
+        populateUI();
+        renderMap();
+    </script>
+</body>
+</html>

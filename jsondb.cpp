@@ -181,9 +181,11 @@ json JsonDB::find_smart_routes(const string& src, const string& dst, const strin
 // ==========================================
 // SEEDING LOGIC
 // ==========================================
-void JsonDB::seed_data() {
-    cout << "[INFO] Seeding database with 50 Airports and Flights..." << endl;
 
+void JsonDB::seed_data() {
+    cout << "[INFO] Seeding: FULL MESH (Connecting every airport to every other)..." << endl;
+
+    // 1. Airports (Ensure you have your full list here)
     vector<Airport> airports = {
         {1, "DEL", "Indira Gandhi Intl", "New Delhi", 28.5562, 77.1000},
         {2, "BOM", "Chhatrapati Shivaji Maharaj Intl", "Mumbai", 19.0896, 72.8656},
@@ -236,32 +238,42 @@ void JsonDB::seed_data() {
         {49, "MYQ", "Mysuru", "Mysuru", 12.2300, 76.6500},
         {50, "GWL", "Gwalior", "Gwalior", 26.2936, 78.2274}
     };
-    data["airports"] = airports;
+   data["airports"] = airports;
 
+    // 2. Generate Full Mesh Flights
     vector<Flight> flights;
     int flight_counter = 1000;
     string airlines[] = {"IndiGo", "Air India", "Vistara", "SpiceJet", "Akasa Air"};
+    
     srand(time(0));
 
+    // Outer Loop: FROM every airport
     for (size_t i = 0; i < airports.size(); ++i) {
-        string src = airports[i].code;
-        for (int k = 0; k < 5; ++k) {
-            int dest_idx = (i + k + 1) % airports.size();
-            string dst = airports[dest_idx].code;
+        
+        // Inner Loop: TO every other airport
+        for (size_t j = 0; j < airports.size(); ++j) {
+            
+            // Skip self-connection (Can't fly DEL to DEL)
+            if (i == j) continue; 
 
+            string src = airports[i].code;
+            string dst = airports[j].code;
+
+            // Generate for Dec 1 to Dec 10
             for (int day = 1; day <= 10; ++day) {
                 string date = "2025-12-" + (day < 10 ? "0" + to_string(day) : to_string(day));
-                
-                int dep_h = 6 + (rand() % 14);
+                // string date = "2025-12-10";
+                // Randomize Time
+                int dep_h = 6 + (rand() % 14); // 6 AM to 8 PM
                 int dep_m = (rand() % 4) * 15;
-                int dur_h = 1 + (rand() % 3);
+                
+                // Calculate fake duration based on array distance (just for variety)
+                int dur_h = 1 + (rand() % 3); 
                 int arr_h = (dep_h + dur_h) % 24;
 
-                char time_buf[10];
-                sprintf(time_buf, "%02d:%02d", dep_h, dep_m);
-                string dep = time_buf;
-                sprintf(time_buf, "%02d:%02d", arr_h, dep_m);
-                string arr = time_buf;
+                char t1[10], t2[10];
+                sprintf(t1, "%02d:%02d", dep_h, dep_m);
+                sprintf(t2, "%02d:%02d", arr_h, dep_m);
 
                 Flight f;
                 f.id = "FL" + to_string(flight_counter++);
@@ -269,8 +281,8 @@ void JsonDB::seed_data() {
                 f.from_code = src;
                 f.to_code = dst;
                 f.date = date;
-                f.departure = dep;
-                f.arrival = arr;
+                f.departure = t1;
+                f.arrival = t2;
                 f.duration = to_string(dur_h) + "h 00m";
                 f.price = 3000 + (rand() % 5000);
 
@@ -278,7 +290,10 @@ void JsonDB::seed_data() {
             }
         }
     }
+
     data["flights"] = flights;
+    cout << "[INFO] Full Mesh Generated: " << flights.size() << " flights." << endl;
+    
     save(); 
 }
 

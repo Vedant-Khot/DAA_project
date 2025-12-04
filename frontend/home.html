@@ -166,8 +166,8 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-const BASE_URL = "https://daa-project-api-services.onrender.com"; 
-// const BASE_URL = "http://localhost:18080"; // Use this for local testing
+// const BASE_URL = "https://daa-project-api-services.onrender.com"; 
+const BASE_URL = "http://localhost:18080"; // Use this for local testing
 // CONFIGURATION
 const SOURCE = "DEL";
 const DEST = "BLR";
@@ -369,7 +369,7 @@ generateMultiPaths();
                         </div>
 
                         <div class="action-cell">
-                            <button class="book-button" onclick="alert('Booking confirmed for ₹${route.total_price}')">Book</button>
+<button class="book-button" onclick='viewDetails(${JSON.stringify(route)})'>View Details</button>
                         </div>
                     </div>`;
                     
@@ -382,7 +382,12 @@ generateMultiPaths();
                 console.error(error);
             }
         }
-
+function viewDetails(flightObject) {
+    // Save the specific flight data to browser memory
+    localStorage.setItem('selectedFlight', JSON.stringify(flightObject));
+    // Go to the details page
+    window.location.href = 'flight-details.html';
+}
         // 3. Draw Complex Routes (Multi-Leg)
         function drawRouteOnMap(segments) {
             // Clear previous
