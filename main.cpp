@@ -34,6 +34,36 @@ int main() {
     // 1. PUBLIC ROUTES
     // ==========================================
     
+    // Root endpoint with API documentation
+    CROW_ROUTE(app, "/")
+    ([](){
+        json response = {
+            {"status", "running"},
+            {"api", "Flight Booking API"},
+            {"version", "1.0"},
+            {"endpoints", {
+                {"/health", "Health check"},
+                {"/api/airports", "Get all airports"},
+                {"/api/flights", "Get flights (limit parameter)"},
+                {"/api/search", "Search flights (from, to, date parameters)"}
+            }},
+            {"admin", {
+                {"/admin/airport/add", "POST - Add airport"},
+                {"/admin/airport/delete", "POST - Delete airport"},
+                {"/admin/flight/add", "POST - Add flight"},
+                {"/admin/flight/delete", "POST - Delete flight"},
+                {"/admin/flight/update", "POST - Update flight"}
+            }}
+        };
+        return crow::response(response.dump());
+    });
+
+    // Health check endpoint
+    CROW_ROUTE(app, "/health")
+    ([](){
+        return crow::response("OK");
+    });
+    
     CROW_ROUTE(app, "/api/airports")
     ([](){
         return crow::response(db.get_all_airports().dump());
@@ -144,7 +174,7 @@ int main() {
     // ==========================================
     // START SERVER
     // ==========================================
-    int port = 18080;
+    int port = 8080;  // Default to 8080 for cloud deployment
     if (const char* env_p = std::getenv("PORT")) {
         try {
             port = std::stoi(env_p);
