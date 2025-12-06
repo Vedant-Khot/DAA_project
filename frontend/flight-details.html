@@ -203,81 +203,88 @@
         }
 
         // 3. Render Map with Animation
-        async function renderMap() {
-            var map = L.map('map');
-            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18 }).addTo(map);
+      // 3. Render Map with Animation
+async function renderMap() {
+    // Prevent map re-initialization error if function runs twice
+    if (L.DomUtil.get('map')._leaflet_id) {
+        L.DomUtil.get('map')._leaflet_id = null;
+    }
 
-            const airportIcon = L.divIcon({
-                className: 'custom-marker',
-                html: '<div style="background: #2563eb; width: 32px; height: 32px; border-radius: 50%; border: 3px solid white; box-shadow: 0 3px 10px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white; font-size: 14px;">✈</div>',
-                iconSize: [32, 32],
-                iconAnchor: [16, 16]
-            });
+    var map = L.map('map');
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18 }).addTo(map);
 
-            try {
-                // Fetch coordinates for all airports involved
-                const res = await fetch(`${BASE_URL}/api/airports`);
-                const allAirports = await res.json();
+    const airportIcon = L.divIcon({
+        className: 'custom-marker',
+        html: '<div style="background: #2563eb; width: 32px; height: 32px; border-radius: 50%; border: 3px solid white; box-shadow: 0 3px 10px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white; font-size: 14px;">✈</div>',
+        iconSize: [32, 32],
+        iconAnchor: [16, 16]
+    });
 
-                let pathCoords = [];
+    try {
+        const res = await fetch(`${BASE_URL}/api/airports`);
+        const allAirports = await res.json();
 
-                flight.segments.forEach(seg => {
-                    const fromApt = allAirports.find(a => a.code === seg.from);
-                    const toApt = allAirports.find(a => a.code === seg.to);
+        // --- FIX 1: Sort segments by time to ensure A -> B -> C order ---
+        // This prevents the line from being drawn "backwards" geographically
+        const sortedSegments = [...flight.segments].sort((a, b) => {
+            return new Date(a.dep) - new Date(b.dep);
+        });
 
-                    if (fromApt && toApt) {
-                        const fromLat = fromApt.lat;
-                        const fromLng = fromApt.long || fromApt.lng;
-                        const toLat = toApt.lat;
-                        const toLng = toApt.long || toApt.lng;
+        let pathCoords = [];
 
-                        pathCoords.push([fromLat, fromLng]);
-                        pathCoords.push([toLat, toLng]);
+        sortedSegments.forEach(seg => {
+            const fromApt = allAirports.find(a => a.code === seg.from);
+            const toApt = allAirports.find(a => a.code === seg.to);
 
-                        // Add markers
-                        L.marker([fromLat, fromLng], {icon: airportIcon}).addTo(map).bindPopup(seg.from);
-                        L.marker([toLat, toLng], {icon: airportIcon}).addTo(map).bindPopup(seg.to);
-                    }
-                });
+            if (fromApt && toApt) {
+                // Handle different property names (long vs lng)
+                const fLat = fromApt.lat, fLng = fromApt.long || fromApt.lng;
+                const tLat = toApt.lat, tLng = toApt.long || toApt.lng;
 
-                // Draw Animated Polyline
-                if (pathCoords.length > 0) {
-                    // Create a canvas overlay for animation
-                    const polyline = L.polyline(pathCoords, { 
-                        color: "#2563eb", 
-                        weight: 4, 
-                        opacity: 0.3,
-                        dashArray: '10, 10'
-                    }).addTo(map);
-                    
-                    // Add animated overlay
-                    const animatedLine = L.polyline(pathCoords, { 
-                        color: "#7c3aed", 
-                        weight: 4, 
-                        opacity: 0.8,
-                        dashArray: '10, 10',
-                        dashOffset: '0',
-                        className: 'animated-path'
-                    }).addTo(map);
-                    
-                    // Animate the dash offset
-                    let offset = 0;
-                    setInterval(() => {
-                        offset = (offset + 1) % 20;
-                        animatedLine.setStyle({ dashOffset: offset.toString() });
-                    }, 50);
-                    
-                    map.fitBounds(pathCoords, { padding: [50, 50] });
-                } else {
-                    map.setView([20.5, 78.9], 5); // Fallback India view
-                }
+                pathCoords.push([fLat, fLng]);
+                pathCoords.push([tLat, tLng]);
 
-            } catch (e) {
-                console.error("Map Error:", e);
-                map.setView([20.5, 78.9], 5);
+                L.marker([fLat, fLng], {icon: airportIcon}).addTo(map).bindPopup(seg.from);
+                L.marker([tLat, tLng], {icon: airportIcon}).addTo(map).bindPopup(seg.to);
             }
+        });
+
+        if (pathCoords.length > 0) {
+            // Static Base Line
+            const polyline = L.polyline(pathCoords, { 
+                color: "#2563eb", 
+                weight: 4, 
+                opacity: 0.3,
+                dashArray: '10, 10'
+            }).addTo(map);
+            
+            // --- FIX 2: Removed 'className: animated-path' ---
+            // We rely PURELY on the setInterval below for smoother control
+            const animatedLine = L.polyline(pathCoords, { 
+                color: "#7c3aed", 
+                weight: 4, 
+                opacity: 0.8,
+                dashArray: '10, 10',
+                dashOffset: '0' 
+            }).addTo(map);
+            
+            let offset = 0;
+            setInterval(() => {
+                // Decrement for Source -> Destination flow
+                offset -= 1;
+                animatedLine.setStyle({ dashOffset: offset.toString() });
+            }, 50);
+            
+            map.fitBounds(pathCoords, { padding: [50, 50] });
+        } else {
+            map.setView([20.5, 78.9], 5);
         }
 
+    } catch (e) {
+        console.error("Map Error:", e);
+        map.setView([20.5, 78.9], 5);
+    }
+}
         // Run
         populateUI();
         renderMap();

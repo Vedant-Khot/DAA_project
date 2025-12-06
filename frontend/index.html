@@ -251,7 +251,7 @@
         let allAirports = [];
         let allFetchedRoutes = [];
         let mapLayers = [];
-
+        let animationInterval = null; // <--- ADD THIS
         // Initialize Map
         const map = L.map('map').setView([20.5937, 78.9629], 5);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
@@ -442,7 +442,11 @@
             mapLayers = [];
 
             const pathCoords = [];
-
+            // 2. CLEAR OLD TIMER (Crucial Fix)
+    if (animationInterval) {
+        clearInterval(animationInterval);
+        animationInterval = null;
+    }
             segments.forEach(seg => {
                 const fromApt = allAirports.find(a => a.code === seg.from);
                 const toApt = allAirports.find(a => a.code === seg.to);
@@ -474,7 +478,8 @@
 
             let offset = 0;
             const anim = setInterval(() => {
-                offset = (offset + 1) % 20;
+                //offset = (offset + 1) % 20;
+                offset -= 1;
                 animLine.setStyle({ dashOffset: offset.toString() });
             }, 50);
             
