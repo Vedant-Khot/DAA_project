@@ -1320,7 +1320,8 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         // const BASE_URL = "http://localhost:18080";
-        const BASE_URL = "https://daa-project-1-7w2x.onrender.com";
+        // const BASE_URL = "https://daa-project-1-7w2x.onrender.com";
+        const BASE_URL = "https://daa-project-api-services.onrender.com";
         let allAirports = [];
         let allFetchedRoutes = [];
         let allReturnRoutes = []; // For round-trip return flights
@@ -1835,12 +1836,8 @@
             const bestTime = Math.min(...times);
             const bestStops = Math.min(...stops);
 
-            // Dynamic grid columns based on number of flights
-            const numFlights = comparisonFlights.length;
-            const gridColumns = `200px repeat(${numFlights}, 1fr)`;
-
-            // Build comparison table with dynamic columns
-            let html = `<div class="comparison-table" style="grid-template-columns: ${gridColumns};">`;
+            // Build comparison table
+            let html = '<div class="comparison-table">';
 
             // Header row
             html += '<div class="comparison-row">';
