@@ -17,7 +17,7 @@ COPY main.cpp .
 COPY jsondb.h .
 COPY jsondb.cpp .
 COPY Models.h .
-COPY algo.cpp .
+# COPY algo.cpp .
 
 # Build the application
 RUN cmake -B build -G "Unix Makefiles" \
@@ -37,8 +37,7 @@ WORKDIR /app
 # Copy compiled binary from builder
 COPY --from=builder /build/build/server_app /app/server_app
 
-# Copy database file if it exists (optional, will be created on first run)
-RUN if [ -f flight_database.json ]; then cp flight_database.json /app/; else echo "Database will be created on first run"; fi
+# Database file will be created on first run by the application
 
 # Expose the port (Cloud deployments use PORT env var)
 EXPOSE 8080

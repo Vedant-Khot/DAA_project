@@ -1,12 +1,46 @@
+# Build artifacts
 build/
+out/
+bin/
+cmake-build-debug/
+_deps/
+
+# Version control
 .git/
 .gitignore
-README.md
+
+# Documentation (keep README for reference)
 *.md
+!README.md
+
+# IDE
 .vscode/
 .idea/
+.vs/
+*.code-workspace
+*.user
+
+# CMake artifacts
 CMakeCache.txt
 cmake_install.cmake
 Makefile
+
+# Application directories not needed in container
 backend/
 frontend/
+
+# Database and logs (will be created at runtime)
+flight_database.json
+*.log
+*.db
+
+# Environment files
+.env
+.env.*
+
+# Dependencies
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
