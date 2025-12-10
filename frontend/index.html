@@ -24,6 +24,126 @@
             color: #e2e8f0;
         }
 
+        /* Navbar Styles */
+        .navbar {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .navbar-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 70px;
+        }
+
+        .navbar-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+        }
+
+        .navbar-brand {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .navbar-menu {
+            display: flex;
+            list-style: none;
+            gap: 8px;
+            margin: 0;
+            padding: 0;
+        }
+
+        .navbar-item {
+            position: relative;
+        }
+
+        .navbar-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            color: #cbd5e1;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s;
+            font-weight: 500;
+            font-size: 15px;
+        }
+
+        .navbar-link i {
+            font-size: 16px;
+        }
+
+        .navbar-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .navbar-item.active .navbar-link {
+            background: linear-gradient(135deg, #1e40af 0%, #7c3aed 100%);
+            color: white;
+        }
+
+        .navbar-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .navbar-auth-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 24px;
+            background: linear-gradient(135deg, #1e40af 0%, #7c3aed 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(30, 64, 175, 0.3);
+        }
+
+        .navbar-auth-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(30, 64, 175, 0.4);
+        }
+
+        .navbar-auth-btn i {
+            font-size: 16px;
+        }
+
+        /* Responsive Navbar */
+        @media (max-width: 768px) {
+            .navbar-container {
+                padding: 0 20px;
+            }
+
+            .navbar-menu {
+                display: none;
+            }
+
+            .navbar-brand {
+                font-size: 20px;
+            }
+        }
+
         .header {
             background: linear-gradient(135deg, #1e40af 0%, #7c3aed 100%);
             padding: 40px 20px;
@@ -1144,6 +1264,50 @@
 </head>
 
 <body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-logo">
+                <img src="assets/logo.png" height="35" alt="AOPPs Logo">
+                <span class="navbar-brand">AOPPs</span>
+            </div>
+
+            <ul class="navbar-menu">
+                <li class="navbar-item active">
+                    <a href="index.html" class="navbar-link">
+                        <i class="fas fa-home"></i>
+                        <span>Home</span>
+                    </a>
+                </li>
+                <li class="navbar-item">
+                    <a href="#flights" class="navbar-link" onclick="scrollToFlights(event)">
+                        <i class="fas fa-plane"></i>
+                        <span>Flights</span>
+                    </a>
+                </li>
+                <li class="navbar-item">
+                    <a href="profile.html" class="navbar-link">
+                        <i class="fas fa-suitcase"></i>
+                        <span>My Bookings</span>
+                    </a>
+                </li>
+                <li class="navbar-item">
+                    <a href="#about" class="navbar-link">
+                        <i class="fas fa-info-circle"></i>
+                        <span>About</span>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="navbar-actions">
+                <a href="login.html" class="navbar-auth-btn" id="navbarAuthBtn">
+                    <i class="fas fa-user"></i>
+                    <span>Login</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
     <div class="header">
         <div class="header-content">
             <div class="logo-section">
@@ -1321,13 +1485,51 @@
     <script>
         // const BASE_URL = "http://localhost:18080";
         // const BASE_URL = "https://daa-project-1-7w2x.onrender.com";
-        const BASE_URL = "https://daa-project-api-services.onrender.com";
+        const BASE_URL = "https://daa-project-1-7w2x.onrender.com";
         let allAirports = [];
         let allFetchedRoutes = [];
         let allReturnRoutes = []; // For round-trip return flights
         let mapLayers = [];
         let animationInterval = null;
         let currentTripType = 'oneway'; // 'oneway' or 'roundtrip'
+
+        // Navbar Functions
+        function updateNavbarAuth() {
+            const currentUser = localStorage.getItem('currentUser');
+            const navbarAuthBtn = document.getElementById('navbarAuthBtn');
+            const authBtn = document.getElementById('authBtn');
+
+            if (currentUser) {
+                const user = JSON.parse(currentUser);
+                const firstName = user.name.split(' ')[0];
+
+                // Update navbar button
+                if (navbarAuthBtn) {
+                    navbarAuthBtn.href = 'profile.html';
+                    navbarAuthBtn.innerHTML = `
+                        <i class="fas fa-user-circle"></i>
+                        <span>${firstName}</span>
+                    `;
+                }
+
+                // Update header button
+                if (authBtn) {
+                    authBtn.href = 'profile.html';
+                    authBtn.innerHTML = `
+                        <i class="fas fa-user-circle"></i>
+                        <span>${firstName}</span>
+                    `;
+                }
+            }
+        }
+
+        function scrollToFlights(event) {
+            event.preventDefault();
+            const flightsSection = document.getElementById('flightListContainer');
+            if (flightsSection) {
+                flightsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
 
         // Initialize Map
         const map = L.map('map').setView([20.5937, 78.9629], 5);
@@ -1951,6 +2153,7 @@
 
         // Initialize
         checkAuthStatus();
+        updateNavbarAuth();
         loadAirports();
     </script>
 
