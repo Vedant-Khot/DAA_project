@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - AOPPs</title>
+    <link rel="icon" type="image/png" href="assets/logo.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Inter", "Segoe UI", sans-serif;
+        }
+
+        body {
+            background: #f8fafc;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e40af 0%, #7c3aed 100%);
+            padding: 20px 40px;
+            color: white;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .nav-links a:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .profile-header {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1e40af 0%, #7c3aed 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            color: white;
+            font-weight: 700;
+        }
+
+        .profile-info h1 {
+            font-size: 32px;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+
+        .profile-info p {
+            color: #64748b;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        .profile-stats {
+            display: flex;
+            gap: 30px;
+            margin-top: 15px;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stat-item i {
+            color: #1e40af;
+            font-size: 20px;
+        }
+
+        .stat-item span {
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .stat-item strong {
+            color: #1e293b;
+            font-size: 18px;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title i {
+            color: #1e40af;
+        }
+
+        .menu-list {
+            list-style: none;
+        }
+
+        .menu-item {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #64748b;
+        }
+
+        .menu-item:hover {
+            background: #f1f5f9;
+            color: #1e40af;
+        }
+
+        .menu-item.active {
+            background: #eff6ff;
+            color: #1e40af;
+            font-weight: 600;
+        }
+
+        .menu-item i {
+            width: 20px;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .booking-card {
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+
+        .booking-card:hover {
+            border-color: #1e40af;
+            box-shadow: 0 4px 15px rgba(30, 64, 175, 0.1);
+        }
+
+        .booking-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .booking-route {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .booking-status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-confirmed {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .booking-details {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .detail-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .detail-value {
+            color: #1e293b;
+            font-weight: 600;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #94a3b8;
+        }
+
+        .empty-state i {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .empty-state h3 {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #1e40af 0%, #7c3aed 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(30, 64, 175, 0.3);
+        }
+
+        @media(max-width: 768px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .profile-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .profile-stats {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .booking-details {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-plane-departure"></i>
+                <span>AOPPs</span>
+            </div>
+            <div class="nav-links">
+                <a href="index.html"><i class="fas fa-home"></i> Home</a>
+                <a href="profile.html"><i class="fas fa-user"></i> Profile</a>
+                <button class="logout-btn" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="profile-header">
+            <div class="profile-avatar" id="userAvatar">U</div>
+            <div class="profile-info">
+                <h1 id="userName">User Name</h1>
+                <p id="userEmail">user@email.com</p>
+                <div class="profile-stats">
+                    <div class="stat-item">
+                        <i class="fas fa-ticket-alt"></i>
+                        <div>
+                            <strong id="bookingCount">0</strong>
+                            <span>Bookings</span>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-heart"></i>
+                        <div>
+                            <strong id="favoriteCount">0</strong>
+                            <span>Favorites</span>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-calendar"></i>
+                        <div>
+                            <span>Member since</span>
+                            <strong id="memberSince">2025</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-grid">
+            <div class="card">
+                <h3 class="card-title">
+                    <i class="fas fa-bars"></i>
+                    Menu
+                </h3>
+                <ul class="menu-list">
+                    <li class="menu-item active" onclick="showSection('bookings')">
+                        <i class="fas fa-ticket-alt"></i>
+                        <span>My Bookings</span>
+                    </li>
+                    <li class="menu-item" onclick="showSection('favorites')">
+                        <i class="fas fa-heart"></i>
+                        <span>Favorite Routes</span>
+                    </li>
+                    <li class="menu-item" onclick="showSection('settings')">
+                        <i class="fas fa-cog"></i>
+                        <span>Account Settings</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <!-- Bookings Section -->
+                <div class="section active" id="bookings">
+                    <h3 class="card-title">
+                        <i class="fas fa-ticket-alt"></i>
+                        My Bookings
+                    </h3>
+                    <div id="bookingsList">
+                        <div class="empty-state">
+                            <i class="fas fa-plane"></i>
+                            <h3>No bookings yet</h3>
+                            <p>Start exploring and book your first flight!</p>
+                            <button class="btn-primary" onclick="window.location.href='index.html'">
+                                Search Flights
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Favorites Section -->
+                <div class="section" id="favorites">
+                    <h3 class="card-title">
+                        <i class="fas fa-heart"></i>
+                        Favorite Routes
+                    </h3>
+                    <div id="favoritesList">
+                        <div class="empty-state">
+                            <i class="fas fa-heart"></i>
+                            <h3>No favorite routes</h3>
+                            <p>Save your frequently traveled routes for quick access!</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Section -->
+                <div class="section" id="settings">
+                    <h3 class="card-title">
+                        <i class="fas fa-cog"></i>
+                        Account Settings
+                    </h3>
+                    <div style="padding: 20px 0;">
+                        <p style="color: #64748b; margin-bottom: 20px;">
+                            Manage your account preferences and personal information.
+                        </p>
+                        <div style="border-top: 2px solid #f1f5f9; padding-top: 20px;">
+                            <h4 style="margin-bottom: 15px; color: #1e293b;">Personal Information</h4>
+                            <div style="display: grid; gap: 15px;">
+                                <div>
+                                    <label
+                                        style="display: block; font-size: 14px; color: #64748b; margin-bottom: 5px;">Name</label>
+                                    <input type="text" id="settingsName"
+                                        style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px;"
+                                        readonly>
+                                </div>
+                                <div>
+                                    <label
+                                        style="display: block; font-size: 14px; color: #64748b; margin-bottom: 5px;">Email</label>
+                                    <input type="email" id="settingsEmail"
+                                        style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px;"
+                                        readonly>
+                                </div>
+                                <div>
+                                    <label
+                                        style="display: block; font-size: 14px; color: #64748b; margin-bottom: 5px;">Member
+                                        Since</label>
+                                    <input type="text" id="settingsMemberSince"
+                                        style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px;"
+                                        readonly>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check authentication
+        function checkAuth() {
+            const currentUser = localStorage.getItem('currentUser');
+            if (!currentUser) {
+                window.location.href = 'login.html';
+                return null;
+            }
+            return JSON.parse(currentUser);
+        }
+
+        // Load user data
+        function loadUserData() {
+            const user = checkAuth();
+            if (!user) return;
+
+            // Get full user data
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            const fullUser = users.find(u => u.id === user.userId);
+
+            if (fullUser) {
+                // Update profile header
+                document.getElementById('userName').textContent = fullUser.name;
+                document.getElementById('userEmail').textContent = fullUser.email;
+                document.getElementById('userAvatar').textContent = fullUser.name.charAt(0).toUpperCase();
+
+                // Update stats
+                document.getElementById('bookingCount').textContent = fullUser.bookings?.length || 0;
+                document.getElementById('favoriteCount').textContent = fullUser.favorites?.length || 0;
+
+                const memberDate = new Date(fullUser.createdAt);
+                document.getElementById('memberSince').textContent = memberDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+
+                // Update settings
+                document.getElementById('settingsName').value = fullUser.name;
+                document.getElementById('settingsEmail').value = fullUser.email;
+                document.getElementById('settingsMemberSince').value = memberDate.toLocaleDateString();
+
+                // Load bookings
+                loadBookings(fullUser.bookings || []);
+            }
+        }
+
+        // Load bookings
+        function loadBookings(bookings) {
+            const container = document.getElementById('bookingsList');
+
+            if (bookings.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-plane"></i>
+                        <h3>No bookings yet</h3>
+                        <p>Start exploring and book your first flight!</p>
+                        <button class="btn-primary" onclick="window.location.href='index.html'">
+                            Search Flights
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = bookings.map(booking => `
+                <div class="booking-card">
+                    <div class="booking-header">
+                        <div class="booking-route">${booking.from} → ${booking.to}</div>
+                        <div class="booking-status status-${booking.status}">${booking.status}</div>
+                    </div>
+                    <div class="booking-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Date</span>
+                            <span class="detail-value">${booking.date}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Airline</span>
+                            <span class="detail-value">${booking.airline}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Price</span>
+                            <span class="detail-value">₹${booking.price}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Show section
+        function showSection(sectionId) {
+            // Update menu
+            document.querySelectorAll('.menu-item').forEach(item => item.classList.remove('active'));
+            event.target.closest('.menu-item').classList.add('active');
+
+            // Update sections
+            document.querySelectorAll('.section').forEach(section => section.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+        }
+
+        // Logout
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('currentUser');
+                localStorage.removeItem('rememberMe');
+                window.location.href = 'login.html';
+            }
+        }
+
+        // Initialize
+        window.addEventListener('DOMContentLoaded', loadUserData);
+    </script>
+</body>
+
+</html>

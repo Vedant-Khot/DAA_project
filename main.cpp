@@ -174,7 +174,7 @@ int main() {
     // ==========================================
     // START SERVER
     // ==========================================
-    int port = 8080;  // Default to 8080 for cloud deployment
+    int port = 18080;  // Default to 8080 for cloud deployment
     if (const char* env_p = std::getenv("PORT")) {
         try {
             port = std::stoi(env_p);

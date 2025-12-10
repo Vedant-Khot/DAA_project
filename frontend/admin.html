@@ -1,0 +1,1854 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Flight Management</title>
+    <link rel="icon" type="image/png" href="assets/logo.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Inter", "Segoe UI", sans-serif;
+        }
+
+        body {
+            background: #f8fafc;
+            min-height: 100vh;
+            color: #1e293b;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 260px;
+            background: linear-gradient(180deg, #1e40af 0%, #7c3aed 100%);
+            padding: 30px 0;
+            z-index: 1000;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar-header {
+            padding: 0 25px 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            margin-bottom: 30px;
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: white;
+        }
+
+        .sidebar-logo i {
+            font-size: 32px;
+            color: #fbbf24;
+        }
+
+        .sidebar-logo h1 {
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .sidebar-logo p {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-top: 2px;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+        }
+
+        .menu-item {
+            margin: 5px 15px;
+        }
+
+        .menu-item a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 15px;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            border-radius: 10px;
+            transition: all 0.3s;
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .menu-item a:hover,
+        .menu-item a.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .menu-item i {
+            font-size: 18px;
+            width: 20px;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            padding: 30px;
+            min-height: 100vh;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .page-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .page-subtitle {
+            font-size: 14px;
+            color: #64748b;
+            margin-top: 5px;
+        }
+
+        .top-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #1e40af 0%, #7c3aed 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(30, 64, 175, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(30, 64, 175, 0.4);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #1e40af;
+            border: 2px solid #e2e8f0;
+        }
+
+        .btn-secondary:hover {
+            border-color: #1e40af;
+            background: #eff6ff;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s;
+            border-left: 4px solid transparent;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card.blue {
+            border-left-color: #3b82f6;
+        }
+
+        .stat-card.purple {
+            border-left-color: #8b5cf6;
+        }
+
+        .stat-card.green {
+            border-left-color: #10b981;
+        }
+
+        .stat-card.orange {
+            border-left-color: #f59e0b;
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .stat-icon.blue {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+        }
+
+        .stat-icon.purple {
+            background: rgba(139, 92, 246, 0.1);
+            color: #8b5cf6;
+        }
+
+        .stat-icon.green {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+        }
+
+        .stat-icon.orange {
+            background: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+
+        .stat-change {
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .stat-change.positive {
+            color: #10b981;
+        }
+
+        .stat-change.negative {
+            color: #ef4444;
+        }
+
+        /* Content Grid */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f1f5f9;
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title i {
+            color: #3b82f6;
+        }
+
+        /* Table */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table thead {
+            background: #f8fafc;
+        }
+
+        .data-table th {
+            padding: 15px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .data-table td {
+            padding: 18px 15px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 14px;
+            color: #1e293b;
+        }
+
+        .data-table tr:hover {
+            background: #f8fafc;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge.success {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .badge.warning {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .badge.danger {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .badge.info {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .btn-icon.edit {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+
+        .btn-icon.edit:hover {
+            background: #2563eb;
+            color: white;
+        }
+
+        .btn-icon.delete {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .btn-icon.delete:hover {
+            background: #dc2626;
+            color: white;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .modal-close {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: #f1f5f9;
+            color: #64748b;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .modal-close:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 10px;
+        }
+
+        .form-input,
+        .form-select {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 15px;
+            color: #1e293b;
+            background: #f8fafc;
+            transition: all 0.3s;
+        }
+
+        .form-input:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 30px;
+        }
+
+        /* Activity Feed */
+        .activity-item {
+            display: flex;
+            gap: 15px;
+            padding: 20px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .activity-icon.blue {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+        }
+
+        .activity-icon.green {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+        }
+
+        .activity-icon.red {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+
+        .activity-content h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 5px;
+        }
+
+        .activity-content p {
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        .activity-time {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 5px;
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #64748b;
+        }
+
+        .loading i {
+            font-size: 32px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Responsive */
+        @media(max-width: 1024px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media(max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s;
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #f1f5f9;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            font-size: 15px;
+            font-weight: 600;
+            color: #64748b;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            color: #1e40af;
+            border-bottom-color: #1e40af;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <i class="fas fa-plane-departure"></i>
+                <div>
+                    <h1>AOPPs Admin</h1>
+                    <p>Management Portal</p>
+                </div>
+            </div>
+        </div>
+        <ul class="sidebar-menu">
+            <li class="menu-item">
+                <a href="#" class="active" onclick="showTab('dashboard')">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#" onclick="showTab('flights')">
+                    <i class="fas fa-plane"></i>
+                    <span>Flights</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#" onclick="showTab('airports')">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span>Airports</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#" onclick="showTab('analytics')">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>Analytics</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#" onclick="showTab('users')">
+                    <i class="fas fa-users"></i>
+                    <span>Users</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="index.html">
+                    <i class="fas fa-home"></i>
+                    <span>Back to Site</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Dashboard Tab -->
+        <div id="dashboard" class="tab-content active">
+            <div class="top-bar">
+                <div>
+                    <h1 class="page-title">Dashboard Overview</h1>
+                    <p class="page-subtitle">Welcome back! Here's what's happening today.</p>
+                </div>
+                <div class="top-actions">
+                    <button class="btn btn-secondary" onclick="refreshData()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card blue">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Total Flights</div>
+                            <div class="stat-value" id="totalFlights">0</div>
+                            <div class="stat-change positive">
+                                <i class="fas fa-arrow-up"></i> Loading...
+                            </div>
+                        </div>
+                        <div class="stat-icon blue">
+                            <i class="fas fa-plane"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card purple">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Total Airports</div>
+                            <div class="stat-value" id="totalAirports">0</div>
+                            <div class="stat-change positive">
+                                <i class="fas fa-arrow-up"></i> Loading...
+                            </div>
+                        </div>
+                        <div class="stat-icon purple">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card green">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Active Routes</div>
+                            <div class="stat-value" id="activeRoutes">0</div>
+                            <div class="stat-change positive">
+                                <i class="fas fa-arrow-up"></i> Loading...
+                            </div>
+                        </div>
+                        <div class="stat-icon green">
+                            <i class="fas fa-route"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card orange">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Avg Price</div>
+                            <div class="stat-value" id="avgPrice">₹0</div>
+                            <div class="stat-change negative">
+                                <i class="fas fa-arrow-down"></i> Loading...
+                            </div>
+                        </div>
+                        <div class="stat-icon orange">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card blue">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Total Users</div>
+                            <div class="stat-value" id="totalUsers">0</div>
+                            <div class="stat-change positive">
+                                <i class="fas fa-arrow-up"></i> Loading...
+                            </div>
+                        </div>
+                        <div class="stat-icon blue">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Grid -->
+            <div class="content-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-plane"></i> Recent Flights
+                        </h3>
+                        <button class="btn btn-primary" onclick="openModal('addFlightModal')">
+                            <i class="fas fa-plus"></i> Add Flight
+                        </button>
+                    </div>
+                    <div id="recentFlightsTable">
+                        <div class="loading">
+                            <i class="fas fa-spinner"></i>
+                            <p>Loading flights...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-bell"></i> Recent Activity
+                        </h3>
+                    </div>
+                    <div id="activityFeed">
+                        <div class="loading">
+                            <i class="fas fa-spinner"></i>
+                            <p>Loading activity...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flights Tab -->
+        <div id="flights" class="tab-content">
+            <div class="top-bar">
+                <div>
+                    <h1 class="page-title">Flight Management</h1>
+                    <p class="page-subtitle">Manage all flights in the system</p>
+                </div>
+                <div class="top-actions">
+                    <button class="btn btn-primary" onclick="openModal('addFlight')">
+                        <i class="fas fa-plus"></i> Add Flight
+                    </button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div id="allFlightsTable">
+                    <div class="loading">
+                        <i class="fas fa-spinner"></i>
+                        <p>Loading all flights...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Airports Tab -->
+        <div id="airports" class="tab-content">
+            <div class="top-bar">
+                <div>
+                    <h1 class="page-title">Airport Management</h1>
+                    <p class="page-subtitle">Manage all airports in the system</p>
+                </div>
+                <div class="top-actions">
+                    <button class="btn btn-primary" onclick="openModal('addAirportModal')">
+                        <i class="fas fa-plus"></i> Add Airport
+                    </button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div id="airportsTable">
+                    <div class="loading">
+                        <i class="fas fa-spinner"></i>
+                        <p>Loading airports...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div id="analytics" class="tab-content">
+            <div class="top-bar">
+                <div>
+                    <h1 class="page-title">Analytics & Reports</h1>
+                    <p class="page-subtitle">Detailed insights and statistics</p>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card blue">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Most Popular Route</div>
+                            <div class="stat-value" style="font-size: 24px;" id="popularRoute">DEL → BOM</div>
+                            <div class="stat-change positive">
+                                <i class="fas fa-fire"></i> Trending
+                            </div>
+                        </div>
+                        <div class="stat-icon blue">
+                            <i class="fas fa-star"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card green">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Cheapest Flight</div>
+                            <div class="stat-value" id="cheapestPrice">₹0</div>
+                            <div class="stat-change positive">
+                                <i class="fas fa-tag"></i> Best Deal
+                            </div>
+                        </div>
+                        <div class="stat-icon green">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card orange">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Most Expensive</div>
+                            <div class="stat-value" id="expensivePrice">₹0</div>
+                            <div class="stat-change negative">
+                                <i class="fas fa-gem"></i> Premium
+                            </div>
+                        </div>
+                        <div class="stat-icon orange">
+                            <i class="fas fa-crown"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card purple">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Airlines Count</div>
+                            <div class="stat-value" id="airlinesCount">0</div>
+                            <div class="stat-change positive">
+                                <i class="fas fa-building"></i> Active
+                            </div>
+                        </div>
+                        <div class="stat-icon purple">
+                            <i class="fas fa-plane-departure"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Users Tab -->
+        <div id="users" class="tab-content">
+            <div class="top-bar">
+                <div>
+                    <h1 class="page-title">User Management</h1>
+                    <p class="page-subtitle">Manage registered users and their accounts</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-users"></i> Registered Users
+                    </h3>
+                </div>
+                <div id="usersTable">
+                    <div class="loading">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Loading users...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Flight Modal -->
+    <div id="addFlightModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Add New Flight</h2>
+                <button class="modal-close" onclick="closeModal('addFlightModal')">&times;</button>
+            </div>
+            <form id="addFlightForm" onsubmit="addFlight(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Flight ID</label>
+                        <input type="text" class="form-input" name="id" placeholder="FL1234" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Airline</label>
+                        <select class="form-select" name="airline" required>
+                            <option value="">Select Airline</option>
+                            <option value="IndiGo">IndiGo</option>
+                            <option value="Air India">Air India</option>
+                            <option value="Vistara">Vistara</option>
+                            <option value="SpiceJet">SpiceJet</option>
+                            <option value="Akasa Air">Akasa Air</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">From (Airport Code)</label>
+                        <input type="text" class="form-input" name="from_code" placeholder="DEL" maxlength="3" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">To (Airport Code)</label>
+                        <input type="text" class="form-input" name="to_code" placeholder="BOM" maxlength="3" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Date</label>
+                    <input type="date" class="form-input" name="date" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Departure Time</label>
+                        <input type="time" class="form-input" name="departure" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Arrival Time</label>
+                        <input type="time" class="form-input" name="arrival" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Duration</label>
+                        <input type="text" class="form-input" name="duration" placeholder="2h 30m" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Price (₹)</label>
+                        <input type="number" class="form-input" name="price" placeholder="5000" required>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary"
+                        onclick="closeModal('addFlightModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add Flight
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Airport Modal -->
+    <div id="addAirportModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Add New Airport</h2>
+                <button class="modal-close" onclick="closeModal('addAirportModal')">&times;</button>
+            </div>
+            <form id="addAirportForm" onsubmit="addAirport(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Airport Code</label>
+                        <input type="text" class="form-input" name="code" placeholder="DEL" maxlength="3" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">City</label>
+                        <input type="text" class="form-input" name="city" placeholder="New Delhi" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Airport Name</label>
+                    <input type="text" class="form-input" name="name" placeholder="Indira Gandhi International"
+                        required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Latitude</label>
+                        <input type="number" step="0.0001" class="form-input" name="lat" placeholder="28.5562" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Longitude</label>
+                        <input type="number" step="0.0001" class="form-input" name="lng" placeholder="77.1000" required>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary"
+                        onclick="closeModal('addAirportModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add Airport
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- Edit Flight Modal -->
+    <div id="editFlight" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Edit Flight</h2>
+                <button class="modal-close" onclick="closeModal('editFlight')">&times;</button>
+            </div>
+            <form onsubmit="updateFlight(event)">
+                <input type="hidden" name="originalId" id="editFlightOriginalId">
+
+                <div class="form-group">
+                    <label class="form-label">Flight ID</label>
+                    <input type="text" class="form-input" name="id" id="editFlightId" placeholder="FL1234" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Airline</label>
+                    <select class="form-select" name="airline" id="editFlightAirline" required>
+                        <option value="">Select Airline</option>
+                        <option value="IndiGo">IndiGo</option>
+                        <option value="Air India">Air India</option>
+                        <option value="Vistara">Vistara</option>
+                        <option value="SpiceJet">SpiceJet</option>
+                        <option value="Akasa Air">Akasa Air</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">From (Airport Code)</label>
+                        <input type="text" class="form-input" name="from" id="editFlightFrom" placeholder="DEL"
+                            maxlength="3" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">To (Airport Code)</label>
+                        <input type="text" class="form-input" name="to" id="editFlightTo" placeholder="BOM"
+                            maxlength="3" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Date</label>
+                    <input type="date" class="form-input" name="date" id="editFlightDate" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Departure Time</label>
+                        <input type="time" class="form-input" name="dep" id="editFlightDep" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Arrival Time</label>
+                        <input type="time" class="form-input" name="arr" id="editFlightArr" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Duration</label>
+                        <input type="text" class="form-input" name="duration" id="editFlightDuration"
+                            placeholder="2h 30m" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Price (₹)</label>
+                        <input type="number" class="form-input" name="price" id="editFlightPrice" placeholder="5000"
+                            required>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('editFlight')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Update Flight
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Airport Modal -->
+    <div id="editAirport" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Edit Airport</h2>
+                <button class="modal-close" onclick="closeModal('editAirport')">&times;</button>
+            </div>
+            <form onsubmit="updateAirport(event)">
+                <input type="hidden" name="originalCode" id="editAirportOriginalCode">
+
+                <div class="form-group">
+                    <label class="form-label">Airport Code</label>
+                    <input type="text" class="form-input" name="code" id="editAirportCode" placeholder="DEL"
+                        maxlength="3" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">City</label>
+                    <input type="text" class="form-input" name="city" id="editAirportCity" placeholder="New Delhi"
+                        required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Latitude</label>
+                        <input type="number" step="0.0001" class="form-input" name="lat" id="editAirportLat"
+                            placeholder="28.5562" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Longitude</label>
+                        <input type="number" step="0.0001" class="form-input" name="lng" id="editAirportLng"
+                            placeholder="77.1000" required>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('editAirport')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Update Airport
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // const BASE_URL = "https://daa-project-api-services.onrender.com";
+        const BASE_URL = "http://localhost:18080";
+
+        let allFlights = [];
+        let allAirports = [];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDashboardData();
+        });
+
+        // Tab Navigation
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Remove active from all menu items
+            document.querySelectorAll('.menu-item a').forEach(link => {
+                link.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+
+            // Add active to clicked menu item
+            event.target.closest('a').classList.add('active');
+
+            // Load data for specific tabs
+            if (tabName === 'flights') loadAllFlights();
+            if (tabName === 'airports') loadAllAirports();
+            if (tabName === 'analytics') loadAnalytics();
+            if (tabName === 'users') loadUsers();
+        }
+
+        // Load Dashboard Data
+        async function loadDashboardData() {
+            try {
+                // Load flights and airports
+                const [flightsRes, airportsRes] = await Promise.all([
+                    fetch(`${BASE_URL}/api/flights?limit=1000`),
+                    fetch(`${BASE_URL}/api/airports`)
+                ]);
+
+                allFlights = await flightsRes.json();
+                allAirports = await airportsRes.json();
+
+                // Update stats
+                updateStats();
+                renderRecentFlights();
+                renderActivityFeed();
+
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                alert('Error connecting to server. Please check if the backend is running.');
+            }
+        }
+
+        // Update Stats
+        function updateStats() {
+            // Total flights
+            document.getElementById('totalFlights').textContent = allFlights.length.toLocaleString();
+
+            // Total airports
+            document.getElementById('totalAirports').textContent = allAirports.length;
+
+            // Active routes (unique from-to combinations)
+            const routes = new Set(allFlights.map(f => `${f.from_code}-${f.to_code}`));
+            document.getElementById('activeRoutes').textContent = routes.size;
+
+            // Average price
+            const avgPrice = allFlights.reduce((sum, f) => sum + f.price, 0) / allFlights.length;
+            document.getElementById('avgPrice').textContent = '₹' + Math.round(avgPrice).toLocaleString();
+
+            // Total users
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            document.getElementById('totalUsers').textContent = users.length;
+        }
+
+        // Render Recent Flights
+        function renderRecentFlights() {
+            const container = document.getElementById('recentFlightsTable');
+            const recent = allFlights.slice(0, 10);
+
+            const html = `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Flight ID</th>
+                            <th>Route</th>
+                            <th>Airline</th>
+                            <th>Date</th>
+                            <th>Price</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${recent.map(flight => `
+                            <tr>
+                                <td><strong>${flight.id}</strong></td>
+                                <td>${flight.from_code} → ${flight.to_code}</td>
+                                <td>${flight.airline}</td>
+                                <td>${flight.date}</td>
+                                <td><strong>₹${flight.price.toLocaleString()}</strong></td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn-icon edit" onclick="editFlight('${flight.id}')">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn-icon delete" onclick="deleteFlight('${flight.id}')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        // Render Activity Feed
+        function renderActivityFeed() {
+            const container = document.getElementById('activityFeed');
+
+            const activities = [
+                { icon: 'blue', iconName: 'plane', title: 'New flight added', desc: 'FL1234 DEL → BOM added to system', time: '2 minutes ago' },
+                { icon: 'green', iconName: 'check-circle', title: 'Airport updated', desc: 'Mumbai airport details updated', time: '15 minutes ago' },
+                { icon: 'blue', iconName: 'plane', title: 'Flight scheduled', desc: 'FL5678 scheduled for tomorrow', time: '1 hour ago' },
+                { icon: 'red', iconName: 'trash', title: 'Flight deleted', desc: 'FL9999 removed from system', time: '2 hours ago' },
+                { icon: 'green', iconName: 'plus-circle', title: 'New airport added', desc: 'Goa airport added successfully', time: '3 hours ago' }
+            ];
+
+            const html = activities.map(activity => `
+                <div class="activity-item">
+                    <div class="activity-icon ${activity.icon}">
+                        <i class="fas fa-${activity.iconName}"></i>
+                    </div>
+                    <div class="activity-content">
+                        <h4>${activity.title}</h4>
+                        <p>${activity.desc}</p>
+                        <div class="activity-time">${activity.time}</div>
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = html;
+        }
+
+        // Load All Flights
+        async function loadAllFlights() {
+            const container = document.getElementById('allFlightsTable');
+
+            if (allFlights.length === 0) {
+                await loadDashboardData();
+            }
+
+            const html = `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Flight ID</th>
+                            <th>Airline</th>
+                            <th>Route</th>
+                            <th>Date</th>
+                            <th>Departure</th>
+                            <th>Arrival</th>
+                            <th>Duration</th>
+                            <th>Price</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${allFlights.slice(0, 50).map(flight => `
+                            <tr>
+                                <td><strong>${flight.id}</strong></td>
+                                <td>${flight.airline}</td>
+                                <td>${flight.from_code} → ${flight.to_code}</td>
+                                <td>${flight.date}</td>
+                                <td>${flight.departure}</td>
+                                <td>${flight.arrival}</td>
+                                <td>${flight.duration}</td>
+                                <td><strong>₹${flight.price.toLocaleString()}</strong></td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn-icon edit" onclick="editFlight('${flight.id}')">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn-icon delete" onclick="deleteFlight('${flight.id}')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                <p style="text-align: center; margin-top: 20px; color: #64748b;">
+                    Showing 50 of ${allFlights.length} flights
+                </p>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        // Load All Airports
+        async function loadAllAirports() {
+            const container = document.getElementById('airportsTable');
+
+            if (allAirports.length === 0) {
+                await loadDashboardData();
+            }
+
+            const html = `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>City</th>
+                            <th>Airport Name</th>
+                            <th>Coordinates</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${allAirports.map(airport => `
+                            <tr>
+                                <td><strong>${airport.code}</strong></td>
+                                <td>${airport.city}</td>
+                                <td>${airport.name}</td>
+                                <td>${airport.lat.toFixed(4)}, ${(airport.long || airport.lng).toFixed(4)}</td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn-icon edit" onclick="editAirport('${airport.code}')">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn-icon delete" onclick="deleteAirport('${airport.code}')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        // Load Analytics
+        async function loadAnalytics() {
+            if (allFlights.length === 0) {
+                await loadDashboardData();
+            }
+
+            // Find cheapest and most expensive
+            const prices = allFlights.map(f => f.price);
+            const cheapest = Math.min(...prices);
+            const expensive = Math.max(...prices);
+
+            // Count unique airlines
+            const airlines = new Set(allFlights.map(f => f.airline));
+
+            // Most popular route
+            const routeCounts = {};
+            allFlights.forEach(f => {
+                const route = `${f.from_code} → ${f.to_code}`;
+                routeCounts[route] = (routeCounts[route] || 0) + 1;
+            });
+            const popularRoute = Object.keys(routeCounts).reduce((a, b) =>
+                routeCounts[a] > routeCounts[b] ? a : b
+            );
+
+            document.getElementById('cheapestPrice').textContent = '₹' + cheapest.toLocaleString();
+            document.getElementById('expensivePrice').textContent = '₹' + expensive.toLocaleString();
+            document.getElementById('airlinesCount').textContent = airlines.size;
+            document.getElementById('popularRoute').textContent = popularRoute;
+        }
+
+        // Modal Functions
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.add('active');
+            } else {
+                console.error('Modal not found:', modalId);
+            }
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('active');
+            }
+        }
+
+        // Add Flight
+        async function addFlight(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const flightData = Object.fromEntries(formData);
+            flightData.price = parseInt(flightData.price);
+
+            try {
+                const response = await fetch(`${BASE_URL}/admin/flight/add`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(flightData)
+                });
+
+                if (response.ok) {
+                    alert('Flight added successfully!');
+                    closeModal('addFlightModal');
+                    event.target.reset();
+                    await loadDashboardData();
+                } else {
+                    const text = await response.text();
+                    alert('Error: ' + text);
+                }
+            } catch (error) {
+                console.error('Error adding flight:', error);
+                alert('Error adding flight. Please try again.');
+            }
+        }
+
+        // Add Airport
+        async function addAirport(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const airportData = Object.fromEntries(formData);
+            airportData.lat = parseFloat(airportData.lat);
+            airportData.lng = parseFloat(airportData.lng);
+            airportData.id = allAirports.length + 1;
+
+            try {
+                const response = await fetch(`${BASE_URL}/admin/airport/add`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(airportData)
+                });
+
+                if (response.ok) {
+                    alert('Airport added successfully!');
+                    closeModal('addAirportModal');
+                    event.target.reset();
+                    await loadDashboardData();
+                } else {
+                    const text = await response.text();
+                    alert('Error: ' + text);
+                }
+            } catch (error) {
+                console.error('Error adding airport:', error);
+                alert('Error adding airport. Please try again.');
+            }
+        }
+
+        // Delete Flight
+        async function deleteFlight(id) {
+            if (!confirm(`Are you sure you want to delete flight ${id}?`)) return;
+
+            try {
+                const response = await fetch(`${BASE_URL}/admin/flight/delete`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
+
+                if (response.ok) {
+                    alert('Flight deleted successfully!');
+                    await loadDashboardData();
+                    loadAllFlights();
+                } else {
+                    alert('Error deleting flight');
+                }
+            } catch (error) {
+                console.error('Error deleting flight:', error);
+                alert('Error deleting flight. Please try again.');
+            }
+        }
+
+        // Delete Airport
+        async function deleteAirport(code) {
+            if (!confirm(`Are you sure you want to delete airport ${code}?`)) return;
+
+            try {
+                const response = await fetch(`${BASE_URL}/admin/airport/delete`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code })
+                });
+
+                if (response.ok) {
+                    alert('Airport deleted successfully!');
+                    await loadDashboardData();
+                    loadAllAirports();
+                } else {
+                    alert('Error deleting airport');
+                }
+            } catch (error) {
+                console.error('Error deleting airport:', error);
+                alert('Error deleting airport. Please try again.');
+            }
+        }
+
+        // Edit functions (placeholder)
+        // Edit Flight
+        function editFlight(id) {
+            const flight = allFlights.find(f => f.id === id);
+            if (!flight) {
+                alert('Flight not found!');
+                return;
+            }
+
+            // Populate form
+            document.getElementById('editFlightOriginalId').value = flight.id;
+            document.getElementById('editFlightId').value = flight.id;
+            document.getElementById('editFlightAirline').value = flight.airline;
+            document.getElementById('editFlightFrom').value = flight.from_code;
+            document.getElementById('editFlightTo').value = flight.to_code;
+            document.getElementById('editFlightDate').value = flight.date;
+            document.getElementById('editFlightDep').value = flight.dep;
+            document.getElementById('editFlightArr').value = flight.arr;
+            document.getElementById('editFlightDuration').value = flight.duration;
+            document.getElementById('editFlightPrice').value = flight.price;
+
+            openModal('editFlight');
+        }
+
+        // Update Flight
+        async function updateFlight(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const originalId = formData.get('originalId');
+
+            const flightData = {
+                id: formData.get('id'),
+                airline: formData.get('airline'),
+                from_code: formData.get('from').toUpperCase(),
+                to_code: formData.get('to').toUpperCase(),
+                date: formData.get('date'),
+                dep: formData.get('dep'),
+                arr: formData.get('arr'),
+                duration: formData.get('duration'),
+                price: parseInt(formData.get('price'))
+            };
+
+            try {
+                // First delete the old flight
+                const deleteRes = await fetch(`${BASE_URL}/admin/flight/delete`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: originalId })
+                });
+
+                if (!deleteRes.ok) throw new Error('Failed to delete old flight');
+
+                // Then add the updated flight
+                const addRes = await fetch(`${BASE_URL}/admin/flight/add`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(flightData)
+                });
+
+                if (!addRes.ok) throw new Error('Failed to add updated flight');
+
+                alert('Flight updated successfully!');
+                closeModal('editFlight');
+                await loadDashboardData();
+            } catch (error) {
+                console.error('Error updating flight:', error);
+                alert('Error updating flight: ' + error.message);
+            }
+        }
+
+        // Edit Airport
+        function editAirport(code) {
+            const airport = allAirports.find(a => a.code === code);
+            if (!airport) {
+                alert('Airport not found!');
+                return;
+            }
+
+            // Populate form
+            document.getElementById('editAirportOriginalCode').value = airport.code;
+            document.getElementById('editAirportCode').value = airport.code;
+            document.getElementById('editAirportCity').value = airport.city;
+            document.getElementById('editAirportLat').value = airport.lat;
+            document.getElementById('editAirportLng').value = airport.lng;
+
+            openModal('editAirport');
+        }
+
+        // Update Airport
+        async function updateAirport(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const originalCode = formData.get('originalCode');
+
+            const airportData = {
+                code: formData.get('code').toUpperCase(),
+                city: formData.get('city'),
+                lat: parseFloat(formData.get('lat')),
+                lng: parseFloat(formData.get('lng'))
+            };
+
+            try {
+                // First delete the old airport
+                const deleteRes = await fetch(`${BASE_URL}/admin/airport/delete`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: originalCode })
+                });
+
+                if (!deleteRes.ok) throw new Error('Failed to delete old airport');
+
+                // Then add the updated airport
+                const addRes = await fetch(`${BASE_URL}/admin/airport/add`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(airportData)
+                });
+
+                if (!addRes.ok) throw new Error('Failed to add updated airport');
+
+                alert('Airport updated successfully!');
+                closeModal('editAirport');
+                await loadDashboardData();
+            } catch (error) {
+                console.error('Error updating airport:', error);
+                alert('Error updating airport: ' + error.message);
+            }
+        }
+
+        // Load Users
+        function loadUsers() {
+            const container = document.getElementById('usersTable');
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+
+            if (users.length === 0) {
+                container.innerHTML = `
+                    <div class="loading">
+                        <i class="fas fa-users"></i>
+                        <p>No registered users yet</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Member Since</th>
+                            <th>Bookings</th>
+                            <th>Favorites</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            users.forEach(user => {
+                const memberDate = new Date(user.createdAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+                const bookingCount = user.bookings?.length || 0;
+                const favoriteCount = user.favorites?.length || 0;
+
+                html += `
+                    <tr>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 35px; height: 35px; border-radius: 50%; background: linear-gradient(135deg, #1e40af 0%, #7c3aed 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700;">
+                                    ${user.name.charAt(0).toUpperCase()}
+                                </div>
+                                <strong>${user.name}</strong>
+                            </div>
+                        </td>
+                        <td>${user.email}</td>
+                        <td>${memberDate}</td>
+                        <td><span class="badge info">${bookingCount} bookings</span></td>
+                        <td><span class="badge warning">${favoriteCount} favorites</span></td>
+                        <td><span class="badge success">Active</span></td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        // Refresh Data
+        async function refreshData() {
+            const btn = event.target.closest('button');
+            const icon = btn.querySelector('i');
+            icon.style.animation = 'spin 1s linear infinite';
+
+            await loadDashboardData();
+
+            icon.style.animation = '';
+            alert('Data refreshed successfully!');
+        }
+    </script>
+</body>
+
+</html>
