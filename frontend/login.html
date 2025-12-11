@@ -252,6 +252,11 @@
             transition: all 0.3s;
         }
 
+        .form-input[type="password"] {
+            padding-right: 50px;
+            /* Extra space for eye icon */
+        }
+
         .form-input:focus {
             outline: none;
             border-color: #1e40af;
@@ -270,6 +275,10 @@
             cursor: pointer;
             font-size: 16px;
             padding: 5px;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .password-toggle:hover {
