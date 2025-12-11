@@ -1324,7 +1324,7 @@
                     <i class="fas fa-user"></i>
                     <span>Login</span>
                 </a>
-            </div> --> 
+            </div> -->
 
             <div class="search-panel">
                 <div class="search-tabs">
@@ -1533,7 +1533,7 @@
 
         // Initialize Map
         const map = L.map('map').setView([20.5937, 78.9629], 5);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
             attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
             maxZoom: 19
         }).addTo(map);
@@ -2136,23 +2136,60 @@
             document.getElementById('comparisonModal').classList.remove('active');
         }
 
-        // Check authentication status
-        function checkAuthStatus() {
+        // Update navbar authentication button
+        function updateNavbarAuth() {
             const currentUser = localStorage.getItem('currentUser');
-            const authBtn = document.getElementById('authBtn');
+            const authBtn = document.getElementById('navbarAuthBtn');
+
+            if (!authBtn) return; // Element doesn't exist
 
             if (currentUser) {
-                const user = JSON.parse(currentUser);
-                authBtn.href = 'profile.html';
+                try {
+                    const user = JSON.parse(currentUser);
+                    // Change button to show user name and link to profile
+                    authBtn.href = 'profile.html';
+                    authBtn.innerHTML = `
+                        <i class="fas fa-user-circle"></i>
+                        <span>${user.name.split(' ')[0]}</span>
+                    `;
+                    authBtn.onclick = null; // Allow normal navigation
+                } catch (e) {
+                    // Invalid session data
+                    localStorage.removeItem('currentUser');
+                    localStorage.removeItem('rememberMe');
+                }
+            } else {
+                // Not logged in - show login button
+                authBtn.href = 'login.html';
                 authBtn.innerHTML = `
-                    <i class="fas fa-user-circle"></i>
-                    <span>${user.name.split(' ')[0]}</span>
+                    <i class="fas fa-sign-in-alt"></i>
+                    <span>Login</span>
                 `;
+                authBtn.onclick = null;
             }
         }
 
+        // Show user menu with logout option
+        function showUserMenu() {
+            const confirmed = confirm('Do you want to logout?');
+            if (confirmed) {
+                logout();
+            }
+        }
+
+        // Logout function
+        function logout() {
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('rememberMe');
+            window.location.href = 'login.html';
+        }
+
+        // Check authentication status (legacy function, now uses updateNavbarAuth)
+        function checkAuthStatus() {
+            updateNavbarAuth();
+        }
+
         // Initialize
-        checkAuthStatus();
         updateNavbarAuth();
         loadAirports();
     </script>

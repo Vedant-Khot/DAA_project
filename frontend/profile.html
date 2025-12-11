@@ -77,6 +77,36 @@
             background: rgba(255, 255, 255, 0.3);
         }
 
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        .hamburger span {
+            width: 25px;
+            height: 3px;
+            background: white;
+            border-radius: 3px;
+            transition: all 0.3s;
+        }
+
+        .hamburger.active span:nth-child(1) {
+            transform: rotate(45deg) translate(8px, 8px);
+        }
+
+        .hamburger.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .hamburger.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -7px);
+        }
+
         .container {
             max-width: 1200px;
             margin: 40px auto;
@@ -319,6 +349,45 @@
         }
 
         @media(max-width: 768px) {
+            .header {
+                padding: 15px 20px;
+            }
+
+            .header-content {
+                position: relative;
+            }
+
+            .hamburger {
+                display: flex;
+            }
+
+            .nav-links {
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: linear-gradient(135deg, #1e40af 0%, #7c3aed 100%);
+                flex-direction: column;
+                padding: 20px;
+                gap: 10px;
+                max-height: 0;
+                overflow: hidden;
+                transition: max-height 0.3s ease-in-out;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+                margin-top: 20px;
+            }
+
+            .nav-links.active {
+                max-height: 300px;
+            }
+
+            .nav-links a,
+            .nav-links .logout-btn {
+                width: 100%;
+                text-align: left;
+                display: block;
+            }
+
             .content-grid {
                 grid-template-columns: 1fr;
             }
@@ -347,7 +416,12 @@
                 <i class="fas fa-plane-departure"></i>
                 <span>AOPPs</span>
             </div>
-            <div class="nav-links">
+            <button class="hamburger" id="hamburgerBtn" onclick="toggleMobileMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="nav-links" id="navLinks">
                 <a href="index.html"><i class="fas fa-home"></i> Home</a>
                 <a href="profile.html"><i class="fas fa-user"></i> Profile</a>
                 <button class="logout-btn" onclick="logout()">
@@ -582,6 +656,14 @@
             // Update sections
             document.querySelectorAll('.section').forEach(section => section.classList.remove('active'));
             document.getElementById(sectionId).classList.add('active');
+        }
+
+        // Toggle mobile menu
+        function toggleMobileMenu() {
+            const navLinks = document.getElementById('navLinks');
+            const hamburger = document.getElementById('hamburgerBtn');
+            navLinks.classList.toggle('active');
+            hamburger.classList.toggle('active');
         }
 
         // Logout
