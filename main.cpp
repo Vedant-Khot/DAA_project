@@ -14,14 +14,39 @@ struct CORSHandler {
     struct context {};
 
     void before_handle(crow::request& req, crow::response& res, context& ctx) {
-        // No action needed
+        // Handle OPTIONS preflight
+        if (req.method == crow::HTTPMethod::OPTIONS) {
+            std::string origin = req.get_header_value("Origin");
+            // Allow Vercel and Localhost
+            if (origin.find("vercel.app") != std::string::npos || 
+                origin.find("localhost") != std::string::npos || 
+                origin.find("127.0.0.1") != std::string::npos) {
+                 res.add_header("Access-Control-Allow-Origin", origin);
+            } else {
+                 // Fallback to the known production frontend
+                 res.add_header("Access-Control-Allow-Origin", "https://daa-project-nncj.vercel.app");
+            }
+            res.add_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+            res.add_header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+            res.add_header("Access-Control-Allow-Credentials", "true");
+            res.code = 200;
+            res.end();
+        }
     }
 
     void after_handle(crow::request& req, crow::response& res, context& ctx) {
-        // Always add these headers to every response
-        res.add_header("Access-Control-Allow-Origin", "*");
+        std::string origin = req.get_header_value("Origin");
+        // Allow Vercel and Localhost for main responses too
+        if (origin.find("vercel.app") != std::string::npos || 
+            origin.find("localhost") != std::string::npos || 
+            origin.find("127.0.0.1") != std::string::npos) {
+             res.add_header("Access-Control-Allow-Origin", origin);
+        } else {
+             res.add_header("Access-Control-Allow-Origin", "https://daa-project-nncj.vercel.app");
+        }
         res.add_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
         res.add_header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+        res.add_header("Access-Control-Allow-Credentials", "true");
     }
 };
 
@@ -186,8 +211,6 @@ int main() {
     // CREATE BOOKING (with simulated payment)
     CROW_ROUTE(app, "/api/booking/create").methods(crow::HTTPMethod::POST, crow::HTTPMethod::OPTIONS)
     ([](const crow::request& req){
-        if (req.method == crow::HTTPMethod::OPTIONS) return crow::response(200);
-
         auto body = json::parse(req.body, nullptr, false);
         if (body.is_discarded()) return crow::response(400, "Invalid JSON");
 
@@ -265,8 +288,6 @@ int main() {
     // CANCEL BOOKING
     CROW_ROUTE(app, "/api/booking/cancel").methods(crow::HTTPMethod::POST, crow::HTTPMethod::OPTIONS)
     ([](const crow::request& req){
-        if (req.method == crow::HTTPMethod::OPTIONS) return crow::response(200);
-
         auto body = json::parse(req.body, nullptr, false);
         if (body.is_discarded()) return crow::response(400, "Invalid JSON");
 
@@ -331,17 +352,12 @@ int main() {
         return crow::response(db.get_all_users().dump());
     });
 
-    // CATCH-ALL (Backup for other OPTIONS requests)
+    // CATCH-ALL
     app.catchall_route()
     ([](const crow::request& req, crow::response& res) {
-        if (req.method == crow::HTTPMethod::OPTIONS) {
-            res.code = 200;
-            res.end();
-        } else {
-            res.code = 404;
-            res.body = "{\"error\": \"Route not found\"}";
-            res.end();
-        }
+        res.code = 404;
+        res.body = "{\"error\": \"Route not found\"}";
+        res.end();
     });
 
     // ==========================================
