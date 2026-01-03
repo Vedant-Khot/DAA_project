@@ -211,6 +211,8 @@ int main() {
     // CREATE BOOKING (with simulated payment)
     CROW_ROUTE(app, "/api/booking/create").methods(crow::HTTPMethod::POST, crow::HTTPMethod::OPTIONS)
     ([](const crow::request& req){
+        if (req.method == crow::HTTPMethod::OPTIONS) return crow::response(200);
+
         auto body = json::parse(req.body, nullptr, false);
         if (body.is_discarded()) return crow::response(400, "Invalid JSON");
 
@@ -288,6 +290,8 @@ int main() {
     // CANCEL BOOKING
     CROW_ROUTE(app, "/api/booking/cancel").methods(crow::HTTPMethod::POST, crow::HTTPMethod::OPTIONS)
     ([](const crow::request& req){
+        if (req.method == crow::HTTPMethod::OPTIONS) return crow::response(200);
+
         auto body = json::parse(req.body, nullptr, false);
         if (body.is_discarded()) return crow::response(400, "Invalid JSON");
 
