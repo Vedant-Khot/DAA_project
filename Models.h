@@ -57,4 +57,37 @@ struct Flight {
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(Flight, id, airline, from_code, to_code, date, departure, arrival, duration, price)
 };
 
+// ==============================
+// 3. BOOKING MODEL
+// ==============================
+struct Booking {
+    std::string booking_id;        // e.g., "BK12345678"
+    std::string user_id;           // Unique user identifier from localStorage
+    std::string flight_id;         // Reference to flight ID
+    std::string passenger_name;    // e.g., "John Doe"
+    std::string passenger_email;   // e.g., "john@example.com"
+    std::string from_code;         // e.g., "DEL"
+    std::string to_code;           // e.g., "BOM"
+    std::string date;              // e.g., "2025-12-01"
+    int total_price;               // Total amount paid
+    std::string booking_date;      // When booking was made
+    std::string status;            // e.g., "confirmed", "cancelled"
+
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(Booking, booking_id, user_id, flight_id, passenger_name, passenger_email, 
+                                   from_code, to_code, date, total_price, booking_date, status)
+};
+
+// ==============================
+// 4. USER MODEL
+// ==============================
+struct User {
+    std::string id;
+    std::string name;
+    std::string email;
+    std::string password; // Plain text for now, should be hashed in production
+    std::string created_at;
+
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(User, id, name, email, password, created_at)
+};
+
 #endif

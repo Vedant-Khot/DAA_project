@@ -7,6 +7,11 @@ project(FlightBackend LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# FIX FOR C4566 WARNINGS: Tell MSVC to use UTF-8
+if(MSVC)
+    add_compile_options(/utf-8)
+endif()
+
 # Force static linking for MinGW (Prevents missing DLL errors on other PCs)
 if(MINGW)
     set(CMAKE_EXE_LINKER_FLAGS "-static -static-libgcc -static-libstdc++")
@@ -55,7 +60,6 @@ FetchContent_MakeAvailable(Crow)
 # ============================================================
 # Build the final executable
 # ============================================================
-# NOTE: Ensure the file name here matches exactly what is on your disk
 add_executable(server_app main.cpp jsondb.cpp) 
 
 # Include ASIO headers explicitly if Crow doesn't pick them up automatically

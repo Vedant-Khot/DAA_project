@@ -46,6 +46,9 @@ public:
     // Smart Search
     json find_smart_routes(const std::string& src, const std::string& dst, const std::string& date, int k = 5);
 
+    // Bellman-Ford Search (Single Best Path)
+    json find_bellman_route(const std::string& src, const std::string& dst, const std::string& date);
+
     // Admin APIs
     bool add_airport(const Airport& airport);
     bool delete_airport(const std::string& code);
@@ -54,6 +57,21 @@ public:
     bool add_flight(const Flight& flight);
     bool delete_flight(const std::string& id);
     bool update_flight(const std::string& id, const json& new_data);
+
+    // Booking APIs
+    bool add_booking(const Booking& booking);
+    json get_all_bookings();
+    json get_booking_by_id(const std::string& booking_id);
+    json get_bookings_by_email(const std::string& email);
+    json get_bookings_by_user_id(const std::string& user_id);
+    bool cancel_booking(const std::string& booking_id);
+    // Admin Stats
+    json get_admin_stats();
+
+    // User management
+    bool add_user(const User& user);
+    json get_user_by_email(const std::string& email);
+    json get_all_users();
 };
 
 #endif

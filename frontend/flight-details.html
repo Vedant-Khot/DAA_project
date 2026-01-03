@@ -689,6 +689,214 @@
                 text-align: center;
             }
         }
+
+        /* Payment Modal Styles */
+        .payment-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .payment-modal.active {
+            display: flex;
+        }
+
+        .payment-content {
+            background: white;
+            border-radius: 25px;
+            padding: 40px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .payment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f1f5f9;
+        }
+
+        .payment-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .modal-close {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: #f1f5f9;
+            color: #64748b;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .modal-close:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 10px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 15px;
+            color: #1e293b;
+            background: #f8fafc;
+            transition: all 0.3s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #2563eb;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 15px;
+        }
+
+        .payment-summary {
+            background: #f8fafc;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            font-size: 15px;
+        }
+
+        .summary-row.total {
+            border-top: 2px solid #e2e8f0;
+            margin-top: 10px;
+            padding-top: 15px;
+            font-weight: 700;
+            font-size: 18px;
+            color: #1e293b;
+        }
+
+        .pay-btn {
+            width: 100%;
+            padding: 16px;
+            background: #16a34a;
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(22, 163, 74, 0.3);
+        }
+
+        .pay-btn:hover {
+            background: #15803d;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(22, 163, 74, 0.4);
+        }
+
+        .success-message {
+            display: none;
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .success-message.active {
+            display: block;
+        }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            background: #dcfce7;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            color: #16a34a;
+        }
+
+        .success-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #16a34a;
+            margin-bottom: 10px;
+        }
+
+        .success-text {
+            font-size: 16px;
+            color: #64748b;
+            margin-bottom: 30px;
+        }
+
+        .booking-id {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: monospace;
+            font-size: 18px;
+            font-weight: 600;
+            color: #2563eb;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 
@@ -796,7 +1004,7 @@
                 <h3>Ready to Book?</h3>
                 <p>Secure your seat now. Limited availability at this price.</p>
             </div>
-            <button class="book-now-btn" onclick="alert('Proceeding to Payment Gateway...')">
+            <button class="book-now-btn" onclick="openPaymentModal()">
                 <i class="fas fa-check-circle"></i> Pay & Book
             </button>
         </div>
@@ -804,9 +1012,8 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // const BASE_URL = "https://daa-project-1-7w2x.onrender.com";
-        // const BASE_URL= "http://localhost:18080"
         const BASE_URL = "https://daa-project-1-7w2x.onrender.com";
+        // const BASE_URL = "http://localhost:18080";
 
         // 1. Retrieve Data from LocalStorage
         const rawData = localStorage.getItem('selectedFlight');
@@ -1091,7 +1298,188 @@
         // Run
         populateUI();
         renderMap();
+
+        // Payment Modal Functions
+        function openPaymentModal() {
+            // Check if user is logged in
+            const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            if (!currentUser.userId) {
+                alert('Please login to continue');
+                window.location.href = 'login.html';
+                return;
+            }
+
+            document.getElementById('paymentModal').classList.add('active');
+            const priceElement = document.getElementById('dPrice');
+            const priceText = priceElement ? priceElement.textContent.replace('₹', '').replace(',', '') : '0';
+            const price = parseInt(priceText) || 0;
+
+            document.getElementById('summaryFare').textContent = '₹' + price.toLocaleString();
+            document.getElementById('summaryTax').textContent = '₹850';
+            document.getElementById('summaryTotal').textContent = '₹' + (price + 850).toLocaleString();
+
+            // Auto-fill passenger name if available
+            if (currentUser.name) {
+                const nameInput = document.getElementById('passengerNameInput');
+                if (nameInput) nameInput.value = currentUser.name;
+            }
+        }
+
+        function closePaymentModal() {
+            document.getElementById('paymentModal').classList.remove('active');
+        }
+
+        async function processPayment(event) {
+            event.preventDefault();
+
+            const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            if (!currentUser.userId) {
+                alert('Please login to continue');
+                window.location.href = 'login.html';
+                return;
+            }
+
+            const passengerName = document.getElementById('passengerNameInput').value;
+            const passengerEmail = currentUser.email;
+
+            const payBtn = event.target.querySelector('.pay-btn');
+            if (payBtn) {
+                payBtn.disabled = true;
+                payBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            }
+
+            const bookingIds = [];
+            const segments = flight.segments;
+
+            try {
+                // Create a booking for EACH segment if more than one stop
+                for (let i = 0; i < segments.length; i++) {
+                    const segment = segments[i];
+                    // Use segment price if it exists, otherwise estimate by proportion
+                    const segmentPrice = segment.price || Math.round(flight.total_price / segments.length);
+
+                    const payload = {
+                        user_id: currentUser.userId,
+                        flight_id: segment.flight_id,
+                        passenger_name: passengerName,
+                        passenger_email: passengerEmail,
+                        from_code: segment.from,
+                        to_code: segment.to,
+                        date: segment.date,
+                        total_price: segmentPrice
+                    };
+
+                    const response = await fetch(`${BASE_URL}/api/booking/create`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const result = await response.json();
+                    if (result.success) {
+                        bookingIds.push(result.booking_id);
+                    } else {
+                        throw new Error(result.message || `Booking failed for leg ${i + 1}`);
+                    }
+                }
+
+                // If all segments booked successfully
+                document.getElementById('paymentForm').style.display = 'none';
+                document.getElementById('successMessage').classList.add('active');
+                document.getElementById('bookingId').textContent = bookingIds.join(', ');
+
+                const successBtn = document.querySelector('#successMessage .pay-btn');
+                if (successBtn) {
+                    successBtn.innerHTML = '<i class="fas fa-ticket-alt"></i> View All Tickets';
+                    successBtn.onclick = () => {
+                        window.location.href = `ticket.html?booking_id=${bookingIds.join(',')}`;
+                    };
+                }
+
+            } catch (error) {
+                console.error('Booking Error:', error);
+                alert('Error: ' + error.message);
+                if (payBtn) {
+                    payBtn.disabled = false;
+                    payBtn.innerHTML = '<i class="fas fa-lock"></i> Pay Now';
+                }
+            }
+        }
+
+        function closeSuccess() {
+            closePaymentModal();
+        }
     </script>
+
+    <!-- Payment Modal -->
+    <div id="paymentModal" class="payment-modal">
+        <div class="payment-content">
+            <!-- Payment Form -->
+            <div id="paymentForm">
+                <div class="payment-header">
+                    <h2 class="payment-title">Payment Details</h2>
+                    <button class="modal-close" onclick="closePaymentModal()">&times;</button>
+                </div>
+
+                <div class="payment-summary">
+                    <div class="summary-row">
+                        <span>Base Fare</span>
+                        <span id="summaryFare">₹0</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Taxes & Fees</span>
+                        <span id="summaryTax">₹850</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Total Amount</span>
+                        <span id="summaryTotal">₹0</span>
+                    </div>
+                </div>
+
+                <form onsubmit="processPayment(event)">
+                    <div class="form-group">
+                        <label class="form-label">Cardholder Name</label>
+                        <input type="text" id="passengerNameInput" class="form-input" placeholder="John Doe" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Card Number</label>
+                        <input type="text" id="cardNumber" class="form-input" placeholder="1234 5678 9012 3456"
+                            maxlength="16" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Expiry Date</label>
+                            <input type="text" class="form-input" placeholder="MM/YY" maxlength="5" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">CVV</label>
+                            <input type="text" class="form-input" placeholder="123" maxlength="3" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="pay-btn">
+                        <i class="fas fa-lock"></i> Pay Now
+                    </button>
+                </form>
+            </div>
+
+            <!-- Success Message -->
+            <div id="successMessage" class="success-message">
+                <div class="success-icon">
+                    <i class="fas fa-check"></i>
+                </div>
+                <h2 class="success-title">Booking Confirmed!</h2>
+                <p class="success-text">Your flight has been successfully booked.
+                    A confirmation email will be sent shortly.</p>
+                <div class="booking-id">Booking ID: <span id="bookingId"></span></div>
+                <button class="pay-btn" onclick="closeSuccess()">
+                    <i class="fas fa-home"></i> Back to Home
+                </button>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>

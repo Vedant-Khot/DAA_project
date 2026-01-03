@@ -285,6 +285,11 @@
             color: #d97706;
         }
 
+        .status-cancelled {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
         .booking-details {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -563,7 +568,9 @@
     </div>
 
     <script>
-        // Check authentication
+        const API_BASE = 'https://daa-project-1-7w2x.onrender.com';
+        // const API_BASE = 'http://localhost:18080';
+        // Check authenticatio  n
         function checkAuth() {
             const currentUser = localStorage.getItem('currentUser');
             if (!currentUser) {
@@ -574,77 +581,162 @@
         }
 
         // Load user data
-        function loadUserData() {
-            const user = checkAuth();
-            if (!user) return;
+        async function loadUserData() {
+            const userSession = checkAuth();
+            if (!userSession) return;
 
-            // Get full user data
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-            const fullUser = users.find(u => u.id === user.userId);
+            try {
+                // Fetch latest user data from server (we can use the login endpoint logic or a get-user endpoint)
+                // Since we already have session info, let's update header first
+                document.getElementById('userName').textContent = userSession.name;
+                document.getElementById('userEmail').textContent = userSession.email;
+                document.getElementById('userAvatar').textContent = userSession.name.charAt(0).toUpperCase();
 
-            if (fullUser) {
-                // Update profile header
-                document.getElementById('userName').textContent = fullUser.name;
-                document.getElementById('userEmail').textContent = fullUser.email;
-                document.getElementById('userAvatar').textContent = fullUser.name.charAt(0).toUpperCase();
+                // Load settings
+                document.getElementById('settingsName').value = userSession.name;
+                document.getElementById('settingsEmail').value = userSession.email;
 
-                // Update stats
-                document.getElementById('bookingCount').textContent = fullUser.bookings?.length || 0;
-                document.getElementById('favoriteCount').textContent = fullUser.favorites?.length || 0;
-
-                const memberDate = new Date(fullUser.createdAt);
-                document.getElementById('memberSince').textContent = memberDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-
-                // Update settings
-                document.getElementById('settingsName').value = fullUser.name;
-                document.getElementById('settingsEmail').value = fullUser.email;
-                document.getElementById('settingsMemberSince').value = memberDate.toLocaleDateString();
-
-                // Load bookings
-                loadBookings(fullUser.bookings || []);
+                // Load bookings from API using user ID
+                await loadBookingsFromAPI(userSession.userId);
+            } catch (error) {
+                console.error('Error loading profile:', error);
             }
         }
 
-        // Load bookings
-        function loadBookings(bookings) {
+        // Load bookings from API by user ID
+        async function loadBookingsFromAPI(userId) {
             const container = document.getElementById('bookingsList');
 
-            if (bookings.length === 0) {
+            try {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #64748b;">
+                        <i class="fas fa-spinner fa-spin" style="font-size: 32px;"></i>
+                        <p style="margin-top: 15px;">Loading bookings...</p>
+                    </div>
+                `;
+
+                const response = await fetch(`${API_BASE}/api/booking/history?user_id=${encodeURIComponent(userId)}`);
+                const bookings = await response.json();
+
+                // Update booking count
+                document.getElementById('bookingCount').textContent = bookings.length;
+                document.getElementById('favoriteCount').textContent = 0;
+
+                if (!bookings || bookings.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-plane"></i>
+                            <h3>No bookings yet</h3>
+                            <p>Start exploring and book your first flight!</p>
+                            <button class="btn-primary" onclick="window.location.href='index.html'">
+                                Search Flights
+                            </button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Sort bookings by date (newest first)
+                bookings.sort((a, b) => new Date(b.booking_date) - new Date(a.booking_date));
+
+                container.innerHTML = bookings.map(booking => `
+                    <div class="booking-card" data-booking-id="${booking.booking_id}">
+                        <div class="booking-header">
+                            <div class="booking-route">
+                                <i class="fas fa-plane-departure" style="color: #1e40af; margin-right: 8px;"></i>
+                                ${booking.from_code} → ${booking.to_code}
+                            </div>
+                            <div class="booking-status status-${booking.status}">${booking.status.toUpperCase()}</div>
+                        </div>
+                        <div class="booking-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Booking ID</span>
+                                <span class="detail-value">${booking.booking_id}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Flight Date</span>
+                                <span class="detail-value">${booking.date}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Price</span>
+                                <span class="detail-value">₹${booking.total_price.toLocaleString()}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Passenger</span>
+                                <span class="detail-value">${booking.passenger_name}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Booked On</span>
+                                <span class="detail-value">${booking.booking_date}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Flight ID</span>
+                                <span class="detail-value">${booking.flight_id}</span>
+                            </div>
+                        </div>
+                        ${booking.status === 'confirmed' ? `
+                            <div style="margin-top: 15px; text-align: right;">
+                                <button onclick="cancelBooking('${booking.booking_id}')" 
+                                    style="background: #fee2e2; color: #dc2626; border: none; padding: 8px 16px; 
+                                    border-radius: 8px; cursor: pointer; font-weight: 500; transition: all 0.3s;"
+                                    onmouseover="this.style.background='#fecaca'"
+                                    onmouseout="this.style.background='#fee2e2'">
+                                    <i class="fas fa-times"></i> Cancel Booking
+                                </button>
+                                <a href="ticket.html?booking_id=${booking.booking_id}" 
+                                    style="margin-left: 10px; background: #e0f2fe; color: #0284c7; border: none; padding: 8px 16px; 
+                                    border-radius: 8px; cursor: pointer; font-weight: 500; text-decoration: none; transition: all 0.3s;"
+                                    onmouseover="this.style.background='#bae6fd'"
+                                    onmouseout="this.style.background='#e0f2fe'">
+                                    <i class="fas fa-ticket-alt"></i> View Ticket
+                                </a>
+                            </div>
+                        ` : ''}
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                console.error('Error loading bookings:', error);
                 container.innerHTML = `
                     <div class="empty-state">
-                        <i class="fas fa-plane"></i>
-                        <h3>No bookings yet</h3>
-                        <p>Start exploring and book your first flight!</p>
-                        <button class="btn-primary" onclick="window.location.href='index.html'">
-                            Search Flights
+                        <i class="fas fa-exclamation-triangle" style="color: #f59e0b;"></i>
+                        <h3>Unable to load bookings</h3>
+                        <p>Please check if the server is running and try again.</p>
+                        <button class="btn-primary" onclick="loadUserData()">
+                            Retry
                         </button>
                     </div>
                 `;
-                return;
             }
+        }
 
-            container.innerHTML = bookings.map(booking => `
-                <div class="booking-card">
-                    <div class="booking-header">
-                        <div class="booking-route">${booking.from} → ${booking.to}</div>
-                        <div class="booking-status status-${booking.status}">${booking.status}</div>
-                    </div>
-                    <div class="booking-details">
-                        <div class="detail-item">
-                            <span class="detail-label">Date</span>
-                            <span class="detail-value">${booking.date}</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Airline</span>
-                            <span class="detail-value">${booking.airline}</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Price</span>
-                            <span class="detail-value">₹${booking.price}</span>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
+        // Cancel booking
+        async function cancelBooking(bookingId) {
+            if (!confirm('Are you sure you want to cancel this booking?')) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/api/booking/cancel`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ booking_id: bookingId })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('Booking cancelled successfully!');
+                    // Reload bookings
+                    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                    if (currentUser) {
+                        await loadBookingsFromAPI(currentUser.userId);
+                    }
+                } else {
+                    alert('Failed to cancel booking: ' + (result.message || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error cancelling booking:', error);
+                alert('Error cancelling booking. Please try again.');
+            }
         }
 
         // Show section

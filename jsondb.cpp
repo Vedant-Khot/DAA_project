@@ -179,6 +179,118 @@ json JsonDB::find_smart_routes(const string& src, const string& dst, const strin
 }
 
 // ==========================================
+// BELLMAN-FORD IMPLEMENTATION
+// ==========================================
+
+json JsonDB::find_bellman_route(const string& src, const string& dst, const string& req_date) {
+    lock_guard<mutex> lock(db_mutex);
+
+    // 1. Identify all unique airports (Nodes)
+    // We need to map string codes to 0..V-1 or just use map<string, long long>
+    // Using map is easier but slightly slower. Given V=50, it's fine.
+    
+    // Initialize Distances to Infinity
+    map<string, long long> dist;
+    map<string, string> parent_airport;
+    map<string, Edge> parent_edge; // To store flight details
+
+    // Initialize all known airports (from adj_list and their destinations)
+    // Best way: iterate data["airports"]
+    if (data.contains("airports")) {
+        for (const auto& a : data["airports"]) {
+            dist[a["code"]] = -1; // -1 represents Infinity
+        }
+    }
+    // Also ensure src/dst are there
+    dist[src] = 0;
+
+    // 2. Relax Edges (V-1 times)
+    // V = number of airports
+    int V = dist.size(); 
+    if (V == 0) return json::object(); // Should not happen if seeded
+
+    // Get all relevant flights (Edges) for the date once
+    vector<pair<string, Edge>> all_edges; // pair<From, Edge>
+    for (const auto& [u_code, edges] : adj_list) {
+        for (const auto& e : edges) {
+            if (e.date == req_date) { // Only flights on this date
+                all_edges.push_back({u_code, e});
+            }
+        }
+    }
+
+    for (int i = 0; i < V - 1; ++i) {
+        bool changed = false;
+        
+        for (const auto& item : all_edges) {
+            string u = item.first;
+            const Edge& e = item.second;
+            string v = e.destination;
+
+            // If dist[u] is not infinity
+            if (dist.find(u) != dist.end() && dist[u] != -1) {
+                // Relaxation check: dist[u] + cost < dist[v]
+                // Note: dist[v] == -1 means infinity
+                if (dist.find(v) != dist.end()) {
+                    if (dist[v] == -1 || dist[u] + e.price < dist[v]) {
+                        dist[v] = dist[u] + e.price;
+                        parent_airport[v] = u;
+                        parent_edge[v] = e;
+                        changed = true;
+                    }
+                }
+            }
+        }
+        if (!changed) break; // Optimization
+    }
+
+    // 3. Construct Result
+    json result;
+    if (dist.find(dst) == dist.end() || dist[dst] == -1) {
+        result["error"] = "No path found";
+        return result;
+    }
+
+    result["total_price"] = dist[dst];
+    result["algorithm"] = "Bellman-Ford";
+    
+    // Reconstruct Path
+    vector<json> segments;
+    string curr = dst;
+    while (curr != src) {
+        // If we get stuck (shouldn't happen if path exists), break
+        if (parent_airport.find(curr) == parent_airport.end()) break;
+        
+        string prev = parent_airport[curr];
+        Edge e = parent_edge[curr];
+        
+        segments.push_back({
+            {"airline", e.airline},
+            {"flight_id", e.flight_id},
+            {"from", prev},
+            {"to", curr},
+            {"dep", e.dep_time},
+            {"arr", e.arr_time},
+            {"price", e.price},
+            {"date", e.date}
+        });
+
+        curr = prev;
+    }
+    
+    // Reverse segments to be Source -> Dest
+    std::reverse(segments.begin(), segments.end());
+    result["segments"] = segments;
+    result["stops"] = (int)segments.size() - 1;
+
+    // Calculate approx duration (incorrect for Bellman Ford without time logic, but shown for compat)
+    result["duration_fmt"] = "N/A (Cost Optimized)";
+
+    return result;
+}
+
+
+// ==========================================
 // SEEDING LOGIC
 // ==========================================
 
@@ -259,8 +371,8 @@ void JsonDB::seed_data() {
             string src = airports[i].code;
             string dst = airports[j].code;
 
-            // Generate for Dec 1 to Dec 10
-            for (int day = 1; day <= 10; ++day) {
+            // Generate for full month of December
+            for (int day = 1; day <= 30; ++day) {
                 string date = "2025-12-" + (day < 10 ? "0" + to_string(day) : to_string(day));
                 // string date = "2025-12-10";
                 // Randomize Time
@@ -377,4 +489,170 @@ bool JsonDB::update_flight(const string& id, const json& new_data) {
         }
     }
     return false;
+}
+
+// ==========================================
+// BOOKING OPERATIONS
+// ==========================================
+
+bool JsonDB::add_booking(const Booking& booking) {
+    lock_guard<mutex> lock(db_mutex);
+    if (!data.contains("bookings")) data["bookings"] = json::array();
+    
+    // Check if booking ID already exists
+    for (const auto& existing : data["bookings"]) {
+        if (existing.value("booking_id", "") == booking.booking_id) return false;
+    }
+    
+    json j = booking;
+    data["bookings"].push_back(j);
+    save();
+    return true;
+}
+
+json JsonDB::get_all_bookings() {
+    lock_guard<mutex> lock(db_mutex);
+    return data.value("bookings", json::array());
+}
+
+json JsonDB::get_booking_by_id(const string& booking_id) {
+    lock_guard<mutex> lock(db_mutex);
+    if (!data.contains("bookings")) return json::object();
+    
+    for (const auto& booking : data["bookings"]) {
+        if (booking.value("booking_id", "") == booking_id) {
+            return booking;
+        }
+    }
+    return json::object();
+}
+
+json JsonDB::get_bookings_by_email(const string& email) {
+    lock_guard<mutex> lock(db_mutex);
+    json results = json::array();
+    
+    if (!data.contains("bookings")) return results;
+    
+    for (const auto& booking : data["bookings"]) {
+        if (booking.value("passenger_email", "") == email) {
+            results.push_back(booking);
+        }
+    }
+    return results;
+}
+
+json JsonDB::get_bookings_by_user_id(const string& user_id) {
+    lock_guard<mutex> lock(db_mutex);
+    json results = json::array();
+    
+    if (!data.contains("bookings")) return results;
+    
+    for (const auto& booking : data["bookings"]) {
+        if (booking.value("user_id", "") == user_id) {
+            results.push_back(booking);
+        }
+    }
+    return results;
+}
+
+bool JsonDB::cancel_booking(const string& booking_id) {
+    lock_guard<mutex> lock(db_mutex);
+    if (!data.contains("bookings")) return false;
+    
+    for (auto& booking : data["bookings"]) {
+        if (booking.value("booking_id", "") == booking_id) {
+            booking["status"] = "cancelled";
+            save();
+            return true;
+        }
+    }
+    return false;
+}
+
+json JsonDB::get_admin_stats() {
+    lock_guard<mutex> lock(db_mutex);
+    
+    json stats;
+    stats["total_flights"] = data.contains("flights") ? data["flights"].size() : 0;
+    stats["total_airports"] = data.contains("airports") ? data["airports"].size() : 0;
+    
+    int total_bookings = 0;
+    long long total_revenue = 0;
+    set<string> users;
+    map<string, int> route_popularity;
+    
+    if (data.contains("bookings")) {
+        for (const auto& b : data["bookings"]) {
+            if (b.value("status", "") == "confirmed") {
+                total_bookings++;
+                total_revenue += b.value("total_price", 0);
+                users.insert(b.value("user_id", ""));
+                
+                string route = b.value("from_code", "") + " → " + b.value("to_code", "");
+                route_popularity[route]++;
+            }
+        }
+    }
+    
+    stats["total_bookings"] = total_bookings;
+    stats["total_revenue"] = total_revenue;
+    stats["total_users"] = data.contains("users") ? data["users"].size() : 0;
+    
+    // Find most popular route
+    string top_route = "N/A";
+    int max_pax = 0;
+    for (const auto& pair : route_popularity) {
+        if (pair.second > max_pax) {
+            max_pax = pair.second;
+            top_route = pair.first;
+        }
+    }
+    stats["popular_route"] = top_route;
+    stats["popular_route_count"] = max_pax;
+
+    // Price Extremes
+    int min_p = 999999, max_p = 0;
+    if (data.contains("flights")) {
+        for (const auto& f : data["flights"]) {
+            int p = f.value("price", 0);
+            if (p < min_p) min_p = p;
+            if (p > max_p) max_p = p;
+        }
+    }
+    stats["cheapest_price"] = (min_p == 999999) ? 0 : min_p;
+    stats["expensive_price"] = max_p;
+    
+    return stats;
+}
+
+bool JsonDB::add_user(const User& user) {
+    lock_guard<mutex> lock(db_mutex);
+    if (!data.contains("users")) {
+        data["users"] = json::array();
+    } else {
+        // Check if user already exists
+        for (const auto& u : data["users"]) {
+            if (u.value("email", "") == user.email) return false;
+        }
+    }
+    
+    data["users"].push_back(user);
+    save();
+    return true;
+}
+
+json JsonDB::get_user_by_email(const string& email) {
+    lock_guard<mutex> lock(db_mutex);
+    if (!data.contains("users")) return json::object();
+    
+    for (const auto& u : data["users"]) {
+        if (u.value("email", "") == email) return u;
+    }
+    return json::object();
+}
+
+json JsonDB::get_all_users() {
+    lock_guard<mutex> lock(db_mutex);
+    if (!data.contains("users")) return json::array();
+    return data["users"];
 }

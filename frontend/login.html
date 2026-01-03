@@ -641,6 +641,9 @@
     </div>
 
     <script>
+        const BASE_URL = 'https://daa-project-1-7w2x.onrender.com';
+        // const BASE_URL = 'http://localhost:18080';
+
         // Switch between login and register tabs
         function switchTab(tab) {
             // Update tab buttons
@@ -705,49 +708,52 @@
             document.getElementById('successMessage').classList.remove('show');
         }
 
-        // Handle login
-        function handleLogin(event) {
+        // Handle login (Now with API)
+        async function handleLogin(event) {
             event.preventDefault();
 
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
             const remember = document.getElementById('rememberMe').checked;
 
-            // Get stored users
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            try {
+                const response = await fetch(`${BASE_URL}/api/user/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
 
-            // Find user
-            const user = users.find(u => u.email === email && u.password === password);
+                const result = await response.json();
 
-            if (user) {
-                // Create session
-                const session = {
-                    userId: user.id,
-                    email: user.email,
-                    name: user.name,
-                    loginTime: new Date().toISOString(),
-                    remember: remember
-                };
+                if (result.success) {
+                    const user = result.user;
+                    // Create session (keep some session info in local storage for frontend state)
+                    const session = {
+                        userId: user.id,
+                        email: user.email,
+                        name: user.name,
+                        loginTime: new Date().toISOString(),
+                        remember: remember
+                    };
 
-                // Store session
-                localStorage.setItem('currentUser', JSON.stringify(session));
-                if (remember) {
-                    localStorage.setItem('rememberMe', 'true');
+                    localStorage.setItem('currentUser', JSON.stringify(session));
+                    if (remember) {
+                        localStorage.setItem('rememberMe', 'true');
+                    }
+
+                    showSuccess('Login successful! Redirecting...');
+                    setTimeout(() => { window.location.href = 'index.html'; }, 1000);
+                } else {
+                    showError(result.message || 'Invalid email or password.');
                 }
-
-                showSuccess('Login successful! Redirecting...');
-
-                // Redirect after 1 second
-                setTimeout(() => {
-                    window.location.href = 'index.html';
-                }, 1000);
-            } else {
-                showError('Invalid email or password. Please try again.');
+            } catch (error) {
+                console.error('Login error:', error);
+                showError('Server connection failed. Is the backend running?');
             }
         }
 
-        // Handle registration
-        function handleRegister(event) {
+        // Handle registration (Now with API)
+        async function handleRegister(event) {
             event.preventDefault();
 
             const name = document.getElementById('registerName').value;
@@ -755,49 +761,41 @@
             const password = document.getElementById('registerPassword').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
 
-            // Validate passwords match
             if (password !== confirmPassword) {
                 showError('Passwords do not match!');
                 return;
             }
 
-            // Validate password strength
-            if (password.length < 6) {
-                showError('Password must be at least 6 characters long!');
-                return;
-            }
-
-            // Get existing users
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-
-            // Check if email already exists
-            if (users.find(u => u.email === email)) {
-                showError('Email already registered. Please login instead.');
-                return;
-            }
-
-            // Create new user
             const newUser = {
                 id: Date.now().toString(),
                 name: name,
                 email: email,
-                password: password, // In production, this should be hashed!
-                createdAt: new Date().toISOString(),
-                bookings: [],
-                favorites: []
+                password: password,
+                created_at: new Date().toISOString()
             };
 
-            // Add to users array
-            users.push(newUser);
-            localStorage.setItem('users', JSON.stringify(users));
+            try {
+                const response = await fetch(`${BASE_URL}/api/user/signup`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newUser)
+                });
 
-            showSuccess('Account created successfully! Please login.');
+                const result = await response.json();
 
-            // Switch to login tab after 2 seconds
-            setTimeout(() => {
-                document.querySelector('.form-tab').click();
-                document.getElementById('loginEmail').value = email;
-            }, 2000);
+                if (result.success) {
+                    showSuccess('Account created successfully! Please login.');
+                    setTimeout(() => {
+                        switchTab('login');
+                        document.getElementById('loginEmail').value = email;
+                    }, 2000);
+                } else {
+                    showError(result.message || 'Registration failed.');
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                showError('Server connection failed.');
+            }
         }
 
         // Social login (placeholder)

@@ -698,6 +698,12 @@
                 </a>
             </li>
             <li class="menu-item">
+                <a href="#" onclick="showTab('bookings')">
+                    <i class="fas fa-ticket-alt"></i>
+                    <span>Bookings</span>
+                </a>
+            </li>
+            <li class="menu-item">
                 <a href="#" onclick="showTab('users')">
                     <i class="fas fa-users"></i>
                     <span>Users</span>
@@ -796,11 +802,26 @@
                             <div class="stat-label">Total Users</div>
                             <div class="stat-value" id="totalUsers">0</div>
                             <div class="stat-change positive">
-                                <i class="fas fa-arrow-up"></i> Loading...
+                                <i class="fas fa-arrow-up"></i> Members
                             </div>
                         </div>
                         <div class="stat-icon blue">
                             <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card green">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Total Revenue</div>
+                            <div class="stat-value" id="totalRevenue">₹0</div>
+                            <div class="stat-change positive">
+                                <i class="fas fa-chart-line"></i> Real-time
+                            </div>
+                        </div>
+                        <div class="stat-icon green">
+                            <i class="fas fa-wallet"></i>
                         </div>
                     </div>
                 </div>
@@ -849,7 +870,7 @@
                     <p class="page-subtitle">Manage all flights in the system</p>
                 </div>
                 <div class="top-actions">
-                    <button class="btn btn-primary" onclick="openModal('addFlight')">
+                    <button class="btn btn-primary" onclick="openModal('addFlightModal')">
                         <i class="fas fa-plus"></i> Add Flight
                     </button>
                 </div>
@@ -980,6 +1001,30 @@
                     <div class="loading">
                         <i class="fas fa-spinner fa-spin"></i>
                         <p>Loading users...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bookings Tab -->
+        <div id="bookings" class="tab-content">
+            <div class="top-bar">
+                <div>
+                    <h1 class="page-title">All Bookings</h1>
+                    <p class="page-subtitle">Manage all passenger bookings and payment statuses</p>
+                </div>
+                <div class="top-actions">
+                    <button class="btn btn-secondary" onclick="loadAllBookings()">
+                        <i class="fas fa-sync-alt"></i> Refresh Bookings
+                    </button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div id="allBookingsTable">
+                    <div class="loading">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Loading all bookings...</p>
                     </div>
                 </div>
             </div>
@@ -1268,57 +1313,66 @@
             if (tabName === 'airports') loadAllAirports();
             if (tabName === 'analytics') loadAnalytics();
             if (tabName === 'users') loadUsers();
+            if (tabName === 'bookings') loadAllBookings();
         }
 
         // Load Dashboard Data
         async function loadDashboardData() {
             try {
-                // Load flights and airports
-                const [flightsRes, airportsRes] = await Promise.all([
-                    fetch(`${BASE_URL}/api/flights?limit=1000`),
-                    fetch(`${BASE_URL}/api/airports`)
+                // 1. Load real business stats from backend
+                const statsRes = await fetch(`${BASE_URL}/api/admin/stats`);
+                const stats = await statsRes.json();
+
+                // 2. Load lists for tables
+                const [flightsRes, airportsRes, bookingsRes] = await Promise.all([
+                    fetch(`${BASE_URL}/api/flights?limit=10`), // Just first 10 for dashboard
+                    fetch(`${BASE_URL}/api/airports`),
+                    fetch(`${BASE_URL}/api/bookings`)
                 ]);
 
                 allFlights = await flightsRes.json();
                 allAirports = await airportsRes.json();
+                const allBookings = await bookingsRes.json() || [];
 
-                // Update stats
-                updateStats();
-                renderRecentFlights();
-                renderActivityFeed();
+                // 3. Update UI via server stats
+                updateStats(stats);
+                renderRecentFlights(allFlights);
+                renderActivityFeed(allBookings);
+
+                // Store allFlights globally for other tabs if they aren't loaded
+                // (Optimized: we actually load full list on-demand in showTab)
 
             } catch (error) {
                 console.error('Error loading dashboard:', error);
-                alert('Error connecting to server. Please check if the backend is running.');
             }
         }
 
         // Update Stats
-        function updateStats() {
-            // Total flights
-            document.getElementById('totalFlights').textContent = allFlights.length.toLocaleString();
+        function updateStats(stats) {
+            // Use real data from server-side analytics
+            document.getElementById('totalFlights').textContent = (stats.total_flights || 0).toLocaleString();
+            document.getElementById('totalAirports').textContent = stats.total_airports || 0;
 
-            // Total airports
-            document.getElementById('totalAirports').textContent = allAirports.length;
+            // For active routes, we can still use local calc or server could provide it
+            document.getElementById('activeRoutes').textContent = stats.popular_route === "N/A" ? 0 : (stats.total_flights / 2).toFixed(0);
 
-            // Active routes (unique from-to combinations)
-            const routes = new Set(allFlights.map(f => `${f.from_code}-${f.to_code}`));
-            document.getElementById('activeRoutes').textContent = routes.size;
+            // Average Price & Revenue
+            document.getElementById('avgPrice').textContent = stats.cheapest_price ? '₹' + stats.cheapest_price.toLocaleString() : '₹0';
+            document.getElementById('totalUsers').textContent = stats.total_users || 0;
+            document.getElementById('totalRevenue').textContent = '₹' + (stats.total_revenue || 0).toLocaleString();
 
-            // Average price
-            const avgPrice = allFlights.reduce((sum, f) => sum + f.price, 0) / allFlights.length;
-            document.getElementById('avgPrice').textContent = '₹' + Math.round(avgPrice).toLocaleString();
+            // Dynamic passenger labels
+            const revenueCard = document.getElementById('totalRevenue').closest('.stat-card');
+            const changeEl = revenueCard.querySelector('.stat-change');
+            changeEl.innerHTML = `<i class="fas fa-ticket-alt"></i> ${stats.total_bookings} Confirmed`;
 
-            // Total users
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-            document.getElementById('totalUsers').textContent = users.length;
+            const routesCard = document.getElementById('activeRoutes').closest('.stat-card');
+            routesCard.querySelector('.stat-change').innerHTML = `<i class="fas fa-star"></i> Top: ${stats.popular_route}`;
         }
 
         // Render Recent Flights
-        function renderRecentFlights() {
+        function renderRecentFlights(flights = []) {
             const container = document.getElementById('recentFlightsTable');
-            const recent = allFlights.slice(0, 10);
-
             const html = `
                 <table class="data-table">
                     <thead>
@@ -1332,7 +1386,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        ${recent.map(flight => `
+                        ${flights.map(flight => `
                             <tr>
                                 <td><strong>${flight.id}</strong></td>
                                 <td>${flight.from_code} → ${flight.to_code}</td>
@@ -1354,31 +1408,30 @@
                     </tbody>
                 </table>
             `;
-
             container.innerHTML = html;
         }
 
-        // Render Activity Feed
-        function renderActivityFeed() {
+        // Render Activity Feed (Real data from bookings)
+        function renderActivityFeed(bookings = []) {
             const container = document.getElementById('activityFeed');
 
-            const activities = [
-                { icon: 'blue', iconName: 'plane', title: 'New flight added', desc: 'FL1234 DEL → BOM added to system', time: '2 minutes ago' },
-                { icon: 'green', iconName: 'check-circle', title: 'Airport updated', desc: 'Mumbai airport details updated', time: '15 minutes ago' },
-                { icon: 'blue', iconName: 'plane', title: 'Flight scheduled', desc: 'FL5678 scheduled for tomorrow', time: '1 hour ago' },
-                { icon: 'red', iconName: 'trash', title: 'Flight deleted', desc: 'FL9999 removed from system', time: '2 hours ago' },
-                { icon: 'green', iconName: 'plus-circle', title: 'New airport added', desc: 'Goa airport added successfully', time: '3 hours ago' }
-            ];
+            // Sort bookings by date and take latest 5
+            const latest = [...bookings].sort((a, b) => new Date(b.booking_date) - new Date(a.booking_date)).slice(0, 5);
 
-            const html = activities.map(activity => `
+            if (latest.length === 0) {
+                container.innerHTML = `<div class="loading"><p>No recent activity</p></div>`;
+                return;
+            }
+
+            const html = latest.map(b => `
                 <div class="activity-item">
-                    <div class="activity-icon ${activity.icon}">
-                        <i class="fas fa-${activity.iconName}"></i>
+                    <div class="activity-icon ${b.status === 'confirmed' ? 'green' : 'red'}">
+                        <i class="fas fa-${b.status === 'confirmed' ? 'check-circle' : 'times-circle'}"></i>
                     </div>
                     <div class="activity-content">
-                        <h4>${activity.title}</h4>
-                        <p>${activity.desc}</p>
-                        <div class="activity-time">${activity.time}</div>
+                        <h4>Booking ${b.status}</h4>
+                        <p><strong>${b.passenger_name}</strong> booked ${b.from_code} → ${b.to_code}</p>
+                        <div class="activity-time">${b.booking_date} (ID: ${b.booking_id})</div>
                     </div>
                 </div>
             `).join('');
@@ -1389,10 +1442,7 @@
         // Load All Flights
         async function loadAllFlights() {
             const container = document.getElementById('allFlightsTable');
-
-            if (allFlights.length === 0) {
-                await loadDashboardData();
-            }
+            if (allFlights.length === 0) await loadDashboardData();
 
             const html = `
                 <table class="data-table">
@@ -1403,8 +1453,6 @@
                             <th>Route</th>
                             <th>Date</th>
                             <th>Departure</th>
-                            <th>Arrival</th>
-                            <th>Duration</th>
                             <th>Price</th>
                             <th>Actions</th>
                         </tr>
@@ -1417,38 +1465,25 @@
                                 <td>${flight.from_code} → ${flight.to_code}</td>
                                 <td>${flight.date}</td>
                                 <td>${flight.departure}</td>
-                                <td>${flight.arrival}</td>
-                                <td>${flight.duration}</td>
                                 <td><strong>₹${flight.price.toLocaleString()}</strong></td>
                                 <td>
                                     <div class="action-buttons">
-                                        <button class="btn-icon edit" onclick="editFlight('${flight.id}')">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button class="btn-icon delete" onclick="deleteFlight('${flight.id}')">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
+                                        <button class="btn-icon edit" onclick="editFlight('${flight.id}')"><i class="fas fa-edit"></i></button>
+                                        <button class="btn-icon delete" onclick="deleteFlight('${flight.id}')"><i class="fas fa-trash"></i></button>
                                     </div>
                                 </td>
                             </tr>
                         `).join('')}
                     </tbody>
                 </table>
-                <p style="text-align: center; margin-top: 20px; color: #64748b;">
-                    Showing 50 of ${allFlights.length} flights
-                </p>
             `;
-
             container.innerHTML = html;
         }
 
         // Load All Airports
         async function loadAllAirports() {
             const container = document.getElementById('airportsTable');
-
-            if (allAirports.length === 0) {
-                await loadDashboardData();
-            }
+            if (allAirports.length === 0) await loadDashboardData();
 
             const html = `
                 <table class="data-table">
@@ -1457,7 +1492,6 @@
                             <th>Code</th>
                             <th>City</th>
                             <th>Airport Name</th>
-                            <th>Coordinates</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -1467,15 +1501,10 @@
                                 <td><strong>${airport.code}</strong></td>
                                 <td>${airport.city}</td>
                                 <td>${airport.name}</td>
-                                <td>${airport.lat.toFixed(4)}, ${(airport.long || airport.lng).toFixed(4)}</td>
                                 <td>
                                     <div class="action-buttons">
-                                        <button class="btn-icon edit" onclick="editAirport('${airport.code}')">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button class="btn-icon delete" onclick="deleteAirport('${airport.code}')">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
+                                        <button class="btn-icon edit" onclick="editAirport('${airport.code}')"><i class="fas fa-edit"></i></button>
+                                        <button class="btn-icon delete" onclick="deleteAirport('${airport.code}')"><i class="fas fa-trash"></i></button>
                                     </div>
                                 </td>
                             </tr>
@@ -1483,370 +1512,218 @@
                     </tbody>
                 </table>
             `;
-
             container.innerHTML = html;
         }
 
-        // Load Analytics
+        // Load All Bookings
+        async function loadAllBookings() {
+            const container = document.getElementById('allBookingsTable');
+            try {
+                const response = await fetch(`${BASE_URL}/api/bookings`);
+                const bookings = await response.json();
+                if (!bookings || bookings.length === 0) {
+                    container.innerHTML = `<div class="loading"><i class="fas fa-ticket-alt"></i><p>No bookings found</p></div>`;
+                    return;
+                }
+                bookings.sort((a, b) => new Date(b.booking_date) - new Date(a.booking_date));
+                const html = `
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Passenger</th>
+                                <th>Route</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${bookings.map(b => `
+                                <tr>
+                                    <td><code style="font-size:11px;">${b.booking_id}</code></td>
+                                    <td>${b.passenger_name}</td>
+                                    <td>${b.from_code} → ${b.to_code}</td>
+                                    <td>${b.date}</td>
+                                    <td><span class="badge ${b.status === 'confirmed' ? 'success' : 'danger'}">${b.status}</span></td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <a href="ticket.html?booking_id=${b.booking_id}" target="_blank" class="btn-icon edit"><i class="fas fa-ticket-alt"></i></a>
+                                            <button class="btn-icon delete" onclick="cancelBooking('${b.booking_id}')" ${b.status === 'cancelled' ? 'disabled' : ''}><i class="fas fa-times"></i></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+                container.innerHTML = html;
+            } catch (e) { container.innerHTML = '<p>Error loading bookings</p>'; }
+        }
+
+        async function cancelBooking(id) {
+            if (!confirm(`Cancel booking ${id}?`)) return;
+            try {
+                await fetch(`${BASE_URL}/api/booking/cancel`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ booking_id: id })
+                });
+                loadAllBookings();
+            } catch (e) { console.error(e); }
+        }
+
+        // Analytics
         async function loadAnalytics() {
-            if (allFlights.length === 0) {
-                await loadDashboardData();
-            }
+            try {
+                // Fetch real business stats from backend for analytics view
+                const statsRes = await fetch(`${BASE_URL}/api/admin/stats`);
+                const s = await statsRes.json();
 
-            // Find cheapest and most expensive
-            const prices = allFlights.map(f => f.price);
-            const cheapest = Math.min(...prices);
-            const expensive = Math.max(...prices);
+                // 1. Price Analysis
+                document.getElementById('cheapestPrice').textContent = '₹' + (s.cheapest_price || 0).toLocaleString();
+                document.getElementById('expensivePrice').textContent = '₹' + (s.expensive_price || 0).toLocaleString();
 
-            // Count unique airlines
-            const airlines = new Set(allFlights.map(f => f.airline));
+                // 2. Traffic Analysis
+                document.getElementById('popularRoute').textContent = s.popular_route || 'N/A';
 
-            // Most popular route
-            const routeCounts = {};
-            allFlights.forEach(f => {
-                const route = `${f.from_code} → ${f.to_code}`;
-                routeCounts[route] = (routeCounts[route] || 0) + 1;
-            });
-            const popularRoute = Object.keys(routeCounts).reduce((a, b) =>
-                routeCounts[a] > routeCounts[b] ? a : b
-            );
+                // Update trending label with passenger count
+                const trendingEl = document.getElementById('popularRoute').nextElementSibling;
+                if (trendingEl) {
+                    trendingEl.innerHTML = `<i class="fas fa-users"></i> ${s.popular_route_count || 0} Passengers`;
+                }
 
-            document.getElementById('cheapestPrice').textContent = '₹' + cheapest.toLocaleString();
-            document.getElementById('expensivePrice').textContent = '₹' + expensive.toLocaleString();
-            document.getElementById('airlinesCount').textContent = airlines.size;
-            document.getElementById('popularRoute').textContent = popularRoute;
-        }
+                // 3. Network Size
+                const airlines = new Set(allFlights.map(f => f.airline));
+                document.getElementById('airlinesCount').textContent = airlines.size || 0;
 
-        // Modal Functions
-        function openModal(modalId) {
-            const modal = document.getElementById(modalId);
-            if (modal) {
-                modal.classList.add('active');
-            } else {
-                console.error('Modal not found:', modalId);
+            } catch (e) {
+                console.error('Analytics error:', e);
             }
         }
 
-        function closeModal(modalId) {
-            const modal = document.getElementById(modalId);
-            if (modal) {
-                modal.classList.remove('active');
-            }
-        }
+        // Modal Controls
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
-        // Add Flight
+        // Management Actions
         async function addFlight(event) {
             event.preventDefault();
-            const formData = new FormData(event.target);
-            const flightData = Object.fromEntries(formData);
-            flightData.price = parseInt(flightData.price);
-
-            try {
-                const response = await fetch(`${BASE_URL}/admin/flight/add`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(flightData)
-                });
-
-                if (response.ok) {
-                    alert('Flight added successfully!');
-                    closeModal('addFlightModal');
-                    event.target.reset();
-                    await loadDashboardData();
-                } else {
-                    const text = await response.text();
-                    alert('Error: ' + text);
-                }
-            } catch (error) {
-                console.error('Error adding flight:', error);
-                alert('Error adding flight. Please try again.');
-            }
+            const data = Object.fromEntries(new FormData(event.target));
+            data.price = parseInt(data.price);
+            await fetch(`${BASE_URL}/admin/flight/add`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            closeModal('addFlightModal');
+            loadDashboardData();
         }
 
-        // Add Airport
-        async function addAirport(event) {
-            event.preventDefault();
-            const formData = new FormData(event.target);
-            const airportData = Object.fromEntries(formData);
-            airportData.lat = parseFloat(airportData.lat);
-            airportData.lng = parseFloat(airportData.lng);
-            airportData.id = allAirports.length + 1;
-
-            try {
-                const response = await fetch(`${BASE_URL}/admin/airport/add`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(airportData)
-                });
-
-                if (response.ok) {
-                    alert('Airport added successfully!');
-                    closeModal('addAirportModal');
-                    event.target.reset();
-                    await loadDashboardData();
-                } else {
-                    const text = await response.text();
-                    alert('Error: ' + text);
-                }
-            } catch (error) {
-                console.error('Error adding airport:', error);
-                alert('Error adding airport. Please try again.');
-            }
-        }
-
-        // Delete Flight
         async function deleteFlight(id) {
-            if (!confirm(`Are you sure you want to delete flight ${id}?`)) return;
-
-            try {
-                const response = await fetch(`${BASE_URL}/admin/flight/delete`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id })
-                });
-
-                if (response.ok) {
-                    alert('Flight deleted successfully!');
-                    await loadDashboardData();
-                    loadAllFlights();
-                } else {
-                    alert('Error deleting flight');
-                }
-            } catch (error) {
-                console.error('Error deleting flight:', error);
-                alert('Error deleting flight. Please try again.');
-            }
+            if (!confirm(`Delete flight ${id}?`)) return;
+            await fetch(`${BASE_URL}/admin/flight/delete`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+            loadDashboardData();
+            loadAllFlights();
         }
 
-        // Delete Airport
         async function deleteAirport(code) {
-            if (!confirm(`Are you sure you want to delete airport ${code}?`)) return;
-
-            try {
-                const response = await fetch(`${BASE_URL}/admin/airport/delete`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ code })
-                });
-
-                if (response.ok) {
-                    alert('Airport deleted successfully!');
-                    await loadDashboardData();
-                    loadAllAirports();
-                } else {
-                    alert('Error deleting airport');
-                }
-            } catch (error) {
-                console.error('Error deleting airport:', error);
-                alert('Error deleting airport. Please try again.');
-            }
+            if (!confirm(`Delete airport ${code}?`)) return;
+            await fetch(`${BASE_URL}/admin/airport/delete`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) });
+            loadDashboardData();
+            loadAllAirports();
         }
 
-        // Edit functions (placeholder)
-        // Edit Flight
         function editFlight(id) {
             const flight = allFlights.find(f => f.id === id);
-            if (!flight) {
-                alert('Flight not found!');
-                return;
-            }
-
-            // Populate form
+            if (!flight) return;
             document.getElementById('editFlightOriginalId').value = flight.id;
             document.getElementById('editFlightId').value = flight.id;
             document.getElementById('editFlightAirline').value = flight.airline;
             document.getElementById('editFlightFrom').value = flight.from_code;
             document.getElementById('editFlightTo').value = flight.to_code;
             document.getElementById('editFlightDate').value = flight.date;
-            document.getElementById('editFlightDep').value = flight.dep;
-            document.getElementById('editFlightArr').value = flight.arr;
+            document.getElementById('editFlightDep').value = flight.dep || flight.departure;
+            document.getElementById('editFlightArr').value = flight.arr || flight.arrival;
             document.getElementById('editFlightDuration').value = flight.duration;
             document.getElementById('editFlightPrice').value = flight.price;
-
             openModal('editFlight');
         }
 
-        // Update Flight
         async function updateFlight(event) {
             event.preventDefault();
-            const formData = new FormData(event.target);
-            const originalId = formData.get('originalId');
-
-            const flightData = {
-                id: formData.get('id'),
-                airline: formData.get('airline'),
-                from_code: formData.get('from').toUpperCase(),
-                to_code: formData.get('to').toUpperCase(),
-                date: formData.get('date'),
-                dep: formData.get('dep'),
-                arr: formData.get('arr'),
-                duration: formData.get('duration'),
-                price: parseInt(formData.get('price'))
+            const fd = new FormData(event.target);
+            const originalId = fd.get('originalId');
+            const data = {
+                id: fd.get('id'),
+                airline: fd.get('airline'),
+                from_code: fd.get('from'),
+                to_code: fd.get('to'),
+                date: fd.get('date'),
+                dep: fd.get('dep'),
+                arr: fd.get('arr'),
+                duration: fd.get('duration'),
+                price: parseInt(fd.get('price'))
             };
-
-            try {
-                // First delete the old flight
-                const deleteRes = await fetch(`${BASE_URL}/admin/flight/delete`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: originalId })
-                });
-
-                if (!deleteRes.ok) throw new Error('Failed to delete old flight');
-
-                // Then add the updated flight
-                const addRes = await fetch(`${BASE_URL}/admin/flight/add`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(flightData)
-                });
-
-                if (!addRes.ok) throw new Error('Failed to add updated flight');
-
-                alert('Flight updated successfully!');
-                closeModal('editFlight');
-                await loadDashboardData();
-            } catch (error) {
-                console.error('Error updating flight:', error);
-                alert('Error updating flight: ' + error.message);
-            }
+            await fetch(`${BASE_URL}/admin/flight/delete`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: originalId }) });
+            await fetch(`${BASE_URL}/admin/flight/add`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            closeModal('editFlight');
+            loadDashboardData();
         }
 
-        // Edit Airport
         function editAirport(code) {
             const airport = allAirports.find(a => a.code === code);
-            if (!airport) {
-                alert('Airport not found!');
-                return;
-            }
-
-            // Populate form
+            if (!airport) return;
             document.getElementById('editAirportOriginalCode').value = airport.code;
             document.getElementById('editAirportCode').value = airport.code;
             document.getElementById('editAirportCity').value = airport.city;
             document.getElementById('editAirportLat').value = airport.lat;
-            document.getElementById('editAirportLng').value = airport.lng;
-
+            document.getElementById('editAirportLng').value = airport.lng || airport.long;
             openModal('editAirport');
         }
 
-        // Update Airport
         async function updateAirport(event) {
             event.preventDefault();
-            const formData = new FormData(event.target);
-            const originalCode = formData.get('originalCode');
-
-            const airportData = {
-                code: formData.get('code').toUpperCase(),
-                city: formData.get('city'),
-                lat: parseFloat(formData.get('lat')),
-                lng: parseFloat(formData.get('lng'))
-            };
-
-            try {
-                // First delete the old airport
-                const deleteRes = await fetch(`${BASE_URL}/admin/airport/delete`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ code: originalCode })
-                });
-
-                if (!deleteRes.ok) throw new Error('Failed to delete old airport');
-
-                // Then add the updated airport
-                const addRes = await fetch(`${BASE_URL}/admin/airport/add`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(airportData)
-                });
-
-                if (!addRes.ok) throw new Error('Failed to add updated airport');
-
-                alert('Airport updated successfully!');
-                closeModal('editAirport');
-                await loadDashboardData();
-            } catch (error) {
-                console.error('Error updating airport:', error);
-                alert('Error updating airport: ' + error.message);
-            }
+            const fd = new FormData(event.target);
+            const originalCode = fd.get('originalCode');
+            const data = { code: fd.get('code'), city: fd.get('city'), lat: parseFloat(fd.get('lat')), lng: parseFloat(fd.get('lng')) };
+            await fetch(`${BASE_URL}/admin/airport/delete`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: originalCode }) });
+            await fetch(`${BASE_URL}/admin/airport/add`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            closeModal('editAirport');
+            loadDashboardData();
         }
 
-        // Load Users
-        function loadUsers() {
+        async function loadUsers() {
             const container = document.getElementById('usersTable');
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            try {
+                const response = await fetch(`${BASE_URL}/api/users`);
+                const users = await response.json();
 
-            if (users.length === 0) {
-                container.innerHTML = `
-                    <div class="loading">
-                        <i class="fas fa-users"></i>
-                        <p>No registered users yet</p>
-                    </div>
-                `;
-                return;
-            }
+                if (!users || users.length === 0) {
+                    container.innerHTML = `<div class="loading"><i class="fas fa-users"></i><p>No users found</p></div>`;
+                    return;
+                }
 
-            let html = `
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Member Since</th>
-                            <th>Bookings</th>
-                            <th>Favorites</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-
-            users.forEach(user => {
-                const memberDate = new Date(user.createdAt).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric'
-                });
-                const bookingCount = user.bookings?.length || 0;
-                const favoriteCount = user.favorites?.length || 0;
-
-                html += `
-                    <tr>
-                        <td>
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <div style="width: 35px; height: 35px; border-radius: 50%; background: linear-gradient(135deg, #1e40af 0%, #7c3aed 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700;">
-                                    ${user.name.charAt(0).toUpperCase()}
-                                </div>
-                                <strong>${user.name}</strong>
-                            </div>
-                        </td>
+                let html = `<table class="data-table"><thead><tr><th>Name</th><th>Email</th><th>Created</th><th>Actions</th></tr></thead><tbody>`;
+                users.forEach(user => {
+                    html += `<tr>
+                        <td><strong>${user.name}</strong></td>
                         <td>${user.email}</td>
-                        <td>${memberDate}</td>
-                        <td><span class="badge info">${bookingCount} bookings</span></td>
-                        <td><span class="badge warning">${favoriteCount} favorites</span></td>
-                        <td><span class="badge success">Active</span></td>
-                    </tr>
-                `;
-            });
-
-            html += `
-                    </tbody>
-                </table>
-            `;
-
-            container.innerHTML = html;
+                        <td>${user.created_at || 'Recently'}</td>
+                        <td><button class="btn btn-secondary" onclick="showUserBookings('${user.id}')">View Bookings</button></td>
+                    </tr>`;
+                });
+                html += `</tbody></table>`;
+                container.innerHTML = html;
+            } catch (e) {
+                console.error('Error loading users:', e);
+                container.innerHTML = '<p>Error loading users from server.</p>';
+            }
         }
 
-        // Refresh Data
+        function showUserBookings(userId) { showTab('bookings'); }
+
         async function refreshData() {
-            const btn = event.target.closest('button');
-            const icon = btn.querySelector('i');
+            const icon = event.target.closest('button').querySelector('i');
             icon.style.animation = 'spin 1s linear infinite';
-
             await loadDashboardData();
-
             icon.style.animation = '';
-            alert('Data refreshed successfully!');
         }
     </script>
 </body>
