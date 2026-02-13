@@ -41,7 +41,8 @@ public:
 
     // Read APIs
     json get_all_airports();
-    json get_flights_limited(int limit);
+    json get_flights_paginated(int page, int limit, const std::string& query = "");
+    int get_total_flights_count(const std::string& query = "");
     
     // Smart Search
     json find_smart_routes(const std::string& src, const std::string& dst, const std::string& date, int k = 5);

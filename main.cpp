@@ -14,36 +14,20 @@ struct CORSHandler {
     struct context {};
 
     void before_handle(crow::request& req, crow::response& res, context& ctx) {
-        // Handle OPTIONS preflight
+        // Handle OPTIONS preflight requests immediately
         if (req.method == crow::HTTPMethod::OPTIONS) {
-            std::string origin = req.get_header_value("Origin");
-            // Allow Vercel and Localhost
-            if (origin.find("vercel.app") != std::string::npos || 
-                origin.find("localhost") != std::string::npos || 
-                origin.find("127.0.0.1") != std::string::npos) {
-                 res.add_header("Access-Control-Allow-Origin", origin);
-            } else {
-                 // Fallback to the known production frontend
-                 res.add_header("Access-Control-Allow-Origin", "https://daa-project-nncj.vercel.app");
-            }
+            res.add_header("Access-Control-Allow-Origin", "https://daa-project-nncj.vercel.app");
             res.add_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
             res.add_header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
             res.add_header("Access-Control-Allow-Credentials", "true");
-            res.code = 200;
+            res.code = 204;
             res.end();
         }
     }
 
     void after_handle(crow::request& req, crow::response& res, context& ctx) {
-        std::string origin = req.get_header_value("Origin");
-        // Allow Vercel and Localhost for main responses too
-        if (origin.find("vercel.app") != std::string::npos || 
-            origin.find("localhost") != std::string::npos || 
-            origin.find("127.0.0.1") != std::string::npos) {
-             res.add_header("Access-Control-Allow-Origin", origin);
-        } else {
-             res.add_header("Access-Control-Allow-Origin", "https://daa-project-nncj.vercel.app");
-        }
+        // Add CORS headers to ALL responses
+        res.add_header("Access-Control-Allow-Origin", "https://daa-project-nncj.vercel.app");
         res.add_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
         res.add_header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
         res.add_header("Access-Control-Allow-Credentials", "true");
@@ -51,6 +35,7 @@ struct CORSHandler {
 };
 
 JsonDB db("flight_database.json");
+
 
 int main() {
     crow::App<CORSHandler> app;
@@ -104,9 +89,22 @@ int main() {
 
     CROW_ROUTE(app, "/api/flights")
     ([](const crow::request& req){
+        int page = 1;
         int limit = 10;
+        std::string query = "";
+        
+        if (req.url_params.get("page")) page = std::stoi(req.url_params.get("page"));
         if (req.url_params.get("limit")) limit = std::stoi(req.url_params.get("limit"));
-        return crow::response(db.get_flights_limited(limit).dump());
+        if (req.url_params.get("search")) query = req.url_params.get("search");
+        
+        json response;
+        response["flights"] = db.get_flights_paginated(page, limit, query);
+        response["total"] = db.get_total_flights_count(query);
+        response["page"] = page;
+        response["limit"] = limit;
+        response["totalPages"] = (response["total"].get<int>() + limit - 1) / limit;
+
+        return crow::response(response.dump());
     });
 
     CROW_ROUTE(app, "/api/search")
@@ -161,6 +159,21 @@ int main() {
         if (body.is_discarded()) return crow::response(400);
         std::string code = body.value("code", "");
         if (db.delete_airport(code)) return crow::response(200, "Deleted");
+        return crow::response(404, "Not Found");
+    });
+
+    // UPDATE AIRPORT
+    CROW_ROUTE(app, "/admin/airport/update").methods(crow::HTTPMethod::POST, crow::HTTPMethod::OPTIONS)
+    ([](const crow::request& req){
+        if (req.method == crow::HTTPMethod::OPTIONS) return crow::response(200);
+
+        const char* code = req.url_params.get("code");
+        if (!code) return crow::response(400, "Missing code");
+        
+        auto body = json::parse(req.body, nullptr, false);
+        if (body.is_discarded()) return crow::response(400);
+        
+        if (db.update_airport(code, body)) return crow::response(200, "Updated");
         return crow::response(404, "Not Found");
     });
 
@@ -321,8 +334,9 @@ int main() {
     // ==========================================
     
     CROW_ROUTE(app, "/api/user/signup")
-    .methods("POST"_method)
+    .methods(crow::HTTPMethod::POST, crow::HTTPMethod::OPTIONS)
     ([&](const crow::request& req){
+        if (req.method == crow::HTTPMethod::OPTIONS) return crow::response(204);
         auto x = json::parse(req.body);
         User u;
         u.id = x.value("id", std::to_string(std::time(nullptr)));
@@ -338,8 +352,9 @@ int main() {
     });
 
     CROW_ROUTE(app, "/api/user/login")
-    .methods("POST"_method)
+    .methods(crow::HTTPMethod::POST, crow::HTTPMethod::OPTIONS)
     ([&](const crow::request& req){
+        if (req.method == crow::HTTPMethod::OPTIONS) return crow::response(204);
         auto x = json::parse(req.body);
         std::string email = x.value("email", "");
         std::string password = x.value("password", "");
@@ -359,23 +374,33 @@ int main() {
     // CATCH-ALL
     app.catchall_route()
     ([](const crow::request& req, crow::response& res) {
+        // Handle any OPTIONS preflight that slips through
+        if (req.method == crow::HTTPMethod::OPTIONS) {
+            res.add_header("Access-Control-Allow-Origin", "https://daa-project-nncj.vercel.app");
+            res.add_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+            res.add_header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+            res.add_header("Access-Control-Allow-Credentials", "true");
+            res.code = 204;
+            res.end();
+            return;
+        }
         res.code = 404;
         res.body = "{\"error\": \"Route not found\"}";
         res.end();
     });
 
-    // ==========================================
+  // ==========================================
     // START SERVER
     // ==========================================
-    int port = 18080;  // Default to 8080 for cloud deployment
+    int port = 18080; 
     if (const char* env_p = std::getenv("PORT")) {
         try {
             port = std::stoi(env_p);
-        } catch (...) {
-            std::cerr << "Invalid PORT value, using default 8080" << std::endl;
-        }
+        } catch (...) {}
     }
     
     std::cout << "Server starting on 0.0.0.0:" << port << std::endl;
-    app.port(port).multithreaded().run();
+
+    // bindaddr("0.0.0.0") allows Render to route traffic to the container
+    app.port(port).bindaddr("0.0.0.0").multithreaded().run();
 }

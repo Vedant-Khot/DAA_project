@@ -418,17 +418,81 @@ json JsonDB::get_all_airports() {
     return data.value("airports", json::array());
 }
 
-json JsonDB::get_flights_limited(int limit) {
+json JsonDB::get_flights_paginated(int page, int limit, const string& query) {
     lock_guard<mutex> lock(db_mutex);
     json res = json::array();
     if(data.contains("flights")) {
-        int c=0;
-        for(auto& f : data["flights"]) {
-            if(c++ >= limit) break;
-            res.push_back(f);
+        const auto& all_flights = data["flights"];
+        vector<json> filtered;
+        
+        // 1. Filter
+        if (query.empty()) {
+            for(const auto& f : all_flights) filtered.push_back(f);
+        } else {
+            string q = query;
+            transform(q.begin(), q.end(), q.begin(), ::tolower);
+            for(const auto& f : all_flights) {
+                string id = f.value("id", "");
+                string from = f.value("from_code", "");
+                string to = f.value("to_code", "");
+                string airline = f.value("airline", "");
+                
+                transform(id.begin(), id.end(), id.begin(), ::tolower);
+                transform(from.begin(), from.end(), from.begin(), ::tolower);
+                transform(to.begin(), to.end(), to.begin(), ::tolower);
+                transform(airline.begin(), airline.end(), airline.begin(), ::tolower);
+
+                if (id.find(q) != string::npos || 
+                    from.find(q) != string::npos || 
+                    to.find(q) != string::npos || 
+                    airline.find(q) != string::npos) {
+                    filtered.push_back(f);
+                }
+            }
+        }
+
+        // 2. Paginate
+        int start_index = (page - 1) * limit;
+        int total = filtered.size();
+
+        if (start_index < total) {
+            for (int i = start_index; i < start_index + limit && i < total; ++i) {
+                res.push_back(filtered[i]);
+            }
         }
     }
     return res;
+}
+
+int JsonDB::get_total_flights_count(const string& query) {
+    lock_guard<mutex> lock(db_mutex);
+    if (!data.contains("flights")) return 0;
+    
+    if (query.empty()) return data["flights"].size();
+
+    int count = 0;
+    string q = query;
+    transform(q.begin(), q.end(), q.begin(), ::tolower);
+
+    for(const auto& f : data["flights"]) {
+        string id = f.value("id", "");
+        string from = f.value("from_code", "");
+        string to = f.value("to_code", "");
+        string airline = f.value("airline", "");
+        
+        transform(id.begin(), id.end(), id.begin(), ::tolower);
+        transform(from.begin(), from.end(), from.begin(), ::tolower);
+        transform(to.begin(), to.end(), to.begin(), ::tolower);
+        transform(airline.begin(), airline.end(), airline.begin(), ::tolower);
+
+        if (id.find(q) != string::npos || 
+            from.find(q) != string::npos || 
+            to.find(q) != string::npos || 
+            airline.find(q) != string::npos) {
+            count++;
+        }
+    }
+    return count;
 }
 
 bool JsonDB::add_airport(const Airport& apt) {
