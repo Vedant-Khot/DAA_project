@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Airport Management - Admin Dashboard</title>
+    <link rel="icon" type="image/png" href="assets/logo.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="css/admin-style.css">
+</head>
+
+<body>
+    <!-- Sidebar Placeholder -->
+    <div id="sidebar-container"></div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="top-bar">
+            <div>
+                <h1 class="page-title">Airport Management</h1>
+                <p class="page-subtitle">Manage all airports in the system</p>
+            </div>
+            <div class="top-actions">
+                <button class="btn btn-primary" onclick="openModal('addAirportModal')">
+                    <i class="fas fa-plus"></i> Add Airport
+                </button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div id="airportsTable">
+                <div class="loading">
+                    <i class="fas fa-spinner"></i>
+                    <p>Loading airports...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Airport Modal -->
+    <div id="addAirportModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Add New Airport</h2>
+                <button class="modal-close" onclick="closeModal('addAirportModal')">&times;</button>
+            </div>
+            <form id="addAirportForm" onsubmit="addAirport(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Airport Code</label>
+                        <input type="text" class="form-input" name="code" placeholder="DEL" maxlength="3" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">City</label>
+                        <input type="text" class="form-input" name="city" placeholder="New Delhi" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Airport Name</label>
+                    <input type="text" class="form-input" name="name" placeholder="Indira Gandhi International"
+                        required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Latitude</label>
+                        <input type="number" step="0.0001" class="form-input" name="lat" placeholder="28.5562" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Longitude</label>
+                        <input type="number" step="0.0001" class="form-input" name="lng" placeholder="77.1000" required>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary"
+                        onclick="closeModal('addAirportModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add Airport
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Airport Modal -->
+    <div id="editAirport" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Edit Airport</h2>
+                <button class="modal-close" onclick="closeModal('editAirport')">&times;</button>
+            </div>
+            <form onsubmit="updateAirport(event)">
+                <input type="hidden" name="originalCode" id="editAirportOriginalCode">
+
+                <div class="form-group">
+                    <label class="form-label">Airport Code</label>
+                    <input type="text" class="form-input" name="code" id="editAirportCode" placeholder="DEL"
+                        maxlength="3" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">City</label>
+                    <input type="text" class="form-input" name="city" id="editAirportCity" placeholder="New Delhi"
+                        required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Latitude</label>
+                        <input type="number" step="0.0001" class="form-input" name="lat" id="editAirportLat"
+                            placeholder="28.5562" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Longitude</label>
+                        <input type="number" step="0.0001" class="form-input" name="lng" id="editAirportLng"
+                            placeholder="77.1000" required>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('editAirport')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Update Airport
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/admin-core.js"></script>
+</body>
+
+</html>

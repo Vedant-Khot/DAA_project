@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics - Admin Dashboard</title>
+    <link rel="icon" type="image/png" href="assets/logo.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="css/admin-style.css">
+</head>
+
+<body>
+    <!-- Sidebar Placeholder -->
+    <div id="sidebar-container"></div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="top-bar">
+            <div>
+                <h1 class="page-title">Analytics & Reports</h1>
+                <p class="page-subtitle">Detailed insights and statistics</p>
+            </div>
+            <div class="top-actions">
+                <button class="btn btn-secondary" onclick="refreshData()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card blue">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-label">Most Popular Route</div>
+                        <div class="stat-value" style="font-size: 24px;" id="popularRoute">DEL → BOM</div>
+                        <div class="stat-change positive">
+                            <i class="fas fa-fire"></i> Trending
+                        </div>
+                    </div>
+                    <div class="stat-icon blue">
+                        <i class="fas fa-star"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card green">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-label">Cheapest Flight</div>
+                        <div class="stat-value" id="cheapestPrice">₹0</div>
+                        <div class="stat-change positive">
+                            <i class="fas fa-tag"></i> Best Deal
+                        </div>
+                    </div>
+                    <div class="stat-icon green">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card orange">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-label">Most Expensive</div>
+                        <div class="stat-value" id="expensivePrice">₹0</div>
+                        <div class="stat-change negative">
+                            <i class="fas fa-gem"></i> Premium
+                        </div>
+                    </div>
+                    <div class="stat-icon orange">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card purple">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-label">Airlines Count</div>
+                        <div class="stat-value" id="airlinesCount">0</div>
+                        <div class="stat-change positive">
+                            <i class="fas fa-building"></i> Active
+                        </div>
+                    </div>
+                    <div class="stat-icon purple">
+                        <i class="fas fa-plane-departure"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/admin-core.js"></script>
+</body>
+
+</html>

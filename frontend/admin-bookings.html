@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bookings - Admin Dashboard</title>
+    <link rel="icon" type="image/png" href="assets/logo.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="css/admin-style.css">
+</head>
+
+<body>
+    <!-- Sidebar Placeholder -->
+    <div id="sidebar-container"></div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="top-bar">
+            <div>
+                <h1 class="page-title">All Bookings</h1>
+                <p class="page-subtitle">Manage all passenger bookings and payment statuses</p>
+            </div>
+            <div class="top-actions">
+                <button class="btn btn-secondary" onclick="loadAllBookings()">
+                    <i class="fas fa-sync-alt"></i> Refresh Bookings
+                </button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div id="allBookingsTable">
+                <div class="loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading all bookings...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/admin-core.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Management - Admin Dashboard</title>
+    <link rel="icon" type="image/png" href="assets/logo.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="css/admin-style.css">
+</head>
+
+<body>
+    <!-- Sidebar Placeholder -->
+    <div id="sidebar-container"></div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="top-bar">
+            <div>
+                <h1 class="page-title">Flight Management</h1>
+                <p class="page-subtitle">Manage all flights in the system</p>
+            </div>
+            <div class="top-actions">
+                <div class="search-box">
+                    <input type="text" id="flightSearchInput" placeholder="Search flights..."
+                        onkeyup="if(event.key === 'Enter') searchFlights()">
+                    <button onclick="searchFlights()"><i class="fas fa-search"></i></button>
+                </div>
+                <button class="btn btn-primary" onclick="openModal('addFlightModal')">
+                    <i class="fas fa-plus"></i> Add Flight
+                </button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div id="allFlightsTable">
+                <div class="loading">
+                    <i class="fas fa-spinner"></i>
+                    <p>Loading all flights...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Flight Modal -->
+    <div id="addFlightModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Add New Flight</h2>
+                <button class="modal-close" onclick="closeModal('addFlightModal')">&times;</button>
+            </div>
+            <form id="addFlightForm" onsubmit="addFlight(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Flight ID</label>
+                        <input type="text" class="form-input" name="id" placeholder="FL1234" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Airline</label>
+                        <select class="form-select" name="airline" required>
+                            <option value="">Select Airline</option>
+                            <option value="IndiGo">IndiGo</option>
+                            <option value="Air India">Air India</option>
+                            <option value="Vistara">Vistara</option>
+                            <option value="SpiceJet">SpiceJet</option>
+                            <option value="Akasa Air">Akasa Air</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">From (Airport Code)</label>
+                        <input type="text" class="form-input" name="from_code" placeholder="DEL" maxlength="3" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">To (Airport Code)</label>
+                        <input type="text" class="form-input" name="to_code" placeholder="BOM" maxlength="3" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Date</label>
+                    <input type="date" class="form-input" name="date" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Departure Time</label>
+                        <input type="time" class="form-input" name="departure" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Arrival Time</label>
+                        <input type="time" class="form-input" name="arrival" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Duration</label>
+                        <input type="text" class="form-input" name="duration" placeholder="2h 30m" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Price (₹)</label>
+                        <input type="number" class="form-input" name="price" placeholder="5000" required>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary"
+                        onclick="closeModal('addFlightModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add Flight
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Flight Modal -->
+    <div id="editFlight" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Edit Flight</h2>
+                <button class="modal-close" onclick="closeModal('editFlight')">&times;</button>
+            </div>
+            <form onsubmit="updateFlight(event)">
+                <input type="hidden" name="originalId" id="editFlightOriginalId">
+
+                <div class="form-group">
+                    <label class="form-label">Flight ID</label>
+                    <input type="text" class="form-input" name="id" id="editFlightId" placeholder="FL1234" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Airline</label>
+                    <select class="form-select" name="airline" id="editFlightAirline" required>
+                        <option value="">Select Airline</option>
+                        <option value="IndiGo">IndiGo</option>
+                        <option value="Air India">Air India</option>
+                        <option value="Vistara">Vistara</option>
+                        <option value="SpiceJet">SpiceJet</option>
+                        <option value="Akasa Air">Akasa Air</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">From (Airport Code)</label>
+                        <input type="text" class="form-input" name="from_code" id="editFlightFrom" placeholder="DEL"
+                            maxlength="3" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">To (Airport Code)</label>
+                        <input type="text" class="form-input" name="to_code" id="editFlightTo" placeholder="BOM"
+                            maxlength="3" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Date</label>
+                    <input type="date" class="form-input" name="date" id="editFlightDate" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Departure Time</label>
+                        <input type="time" class="form-input" name="departure" id="editFlightDep" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Arrival Time</label>
+                        <input type="time" class="form-input" name="arrival" id="editFlightArr" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Duration</label>
+                        <input type="text" class="form-input" name="duration" id="editFlightDuration"
+                            placeholder="2h 30m" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Price (₹)</label>
+                        <input type="number" class="form-input" name="price" id="editFlightPrice" placeholder="5000"
+                            required>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('editFlight')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Update Flight
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/admin-core.js"></script>
+</body>
+
+</html>
